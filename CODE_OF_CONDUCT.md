@@ -95,17 +95,19 @@ Rohit Bhalekar (PA)
 ---
 
 Sandesh Shinde (Maintainer & Collaborator)
-- [GitHub]()
-- [LinkedIn]()
-- Email: 
+- [GitHub](https://github.com/Molza01)
+- [LinkedIn](https://www.linkedin.com/in/sandesh-shinde-0255592a2/)
+- Email: sandeshshinde5002@gmail.com
 
 
 ---
 
 Tushar Kale (Maintainer & Collaborator)
-- [GitHub]()
-- [LinkedIn]()
-- Email: 
+- [GitHub](https://github.com/TusharKale10)
+- [LinkedIn](https://linkedin.com/in/tushar-kale-2a76862aa)
+- Email: tusharkale2037@gmail.com 
+
+---
 
 All reports will be reviewed confidentially.
 
