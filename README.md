@@ -6,6 +6,10 @@ Schedula is a simple appointment booking app built for the **Odoo x VIT Hackatho
 
 It's not just a calendar with a pay button. Customers, organisers, and admins each get their own pages. Bookings are safe even when many people book at the same time. Payments are checked on the server. Discounts, credits, and plans all add up correctly to the final price.
 
+<p align="center">
+  <img src="./assets/Homepage.png"  />
+</p>
+
 ---
 
 ## Watch it before you read it
@@ -194,6 +198,19 @@ Password for all of them: `password123`.
 | `maria@app.com` | organiser | owns Personal Training, Photo Studio |
 | `customer@app.com` | customer | Gold plan, 700 credits |
 | `akash@app.com` | customer | 100 credits, no plan |
+
+---
+
+---
+
+## Contribution & Community Guidelines
+
+Before contributing to the project, please make sure to read:
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — Contribution workflow, issue rules, PR guidelines, coding standards, and contributor instructions.
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) — Community guidelines and expected behavior for all participants and contributors.
+
+Following these guidelines helps maintain a healthy, organized, and beginner-friendly open-source environment.
 
 ---
 
