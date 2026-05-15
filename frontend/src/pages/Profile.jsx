@@ -4,6 +4,7 @@ import {
   CalendarDays, Clock, MapPin, User, Phone, ShieldCheck, Mail, Loader2,
   Video, X, RefreshCw, CreditCard, Star, MessageSquare, Camera, Upload, Trash2,
 } from 'lucide-react';
+import { downloadICalFile, getGoogleCalendarLink } from '../utils/calendarExport';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client';
 import { imageFor } from '../utils/serviceVisuals';
@@ -45,11 +46,13 @@ function ApptCard({ b, onCancel }) {
             <JoinMeetingButton booking={b} size="sm" />
           )}
         </div>
-        <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2">
           {b.payment_status === 'pending' && b.status !== 'cancelled' && (
             <Link to={`/booking/${b.id}/pay`} className="btn-primary !py-1.5 !px-3 text-xs"><CreditCard size={12} /> Pay now</Link>
           )}
           <Link to={`/booking/${b.id}`} className="btn-outline !py-1.5 !px-3 text-xs">View</Link>
+          <button onClick={() => downloadICalFile(b)} className="btn-ghost !py-1.5 !px-3 text-xs"><CalendarDays size={12} /> Download</button>
+          <a href={getGoogleCalendarLink(b)} target="_blank" rel="noreferrer" className="btn-outline !py-1.5 !px-3 text-xs">Add to Google</a>
           {b.status !== 'cancelled' && (
             <Link to={`/booking/${b.id}/reschedule`} className="btn-ghost !py-1.5 !px-3 text-xs"><RefreshCw size={12} /> Reschedule</Link>
           )}

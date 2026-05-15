@@ -4,6 +4,7 @@ import { CalendarPlus, ChevronLeft, Video, MapPin, RefreshCw, X, Star, Share2, C
 import { api } from '../api/client';
 import { imageFor } from '../utils/serviceVisuals';
 import { formatDateTime } from '../utils/format';
+import { downloadICalFile, getGoogleCalendarLink } from '../utils/calendarExport';
 import JoinMeetingButton from '../components/JoinMeetingButton.jsx';
 
 const fmtDate = formatDateTime;
@@ -195,7 +196,10 @@ export default function BookingConfirmed() {
             <div className="aspect-[16/9] bg-cover bg-center" style={{ backgroundImage: `url(${imageFor({ name: b.service_name })})` }} />
             <div className="p-4">
               <h3 className="font-bold">Save the date</h3>
-              <a href={googleCalendarUrl(b)} target="_blank" rel="noreferrer" className="btn-outline w-full mt-3">
+              <button onClick={() => downloadICalFile(b)} className="btn-outline w-full mt-3">
+                <CalendarIcon size={14} /> Download calendar
+              </button>
+              <a href={getGoogleCalendarLink(b)} target="_blank" rel="noreferrer" className="btn-ghost w-full mt-3">
                 <CalendarPlus size={14} /> Add to Google Calendar
               </a>
               <p className="text-xs text-ink-500 mt-3 leading-relaxed">A confirmation email was sent to your registered address. You can reschedule any time before the appointment starts.</p>
