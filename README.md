@@ -176,6 +176,30 @@ If your DB already exists and you just want to apply the latest change (the `ava
 mysql appointment_app < db/migrations/001_add_avatar_url.sql
 ```
 
+## Email / OTP Configuration
+
+Schedula supports real OTP email delivery using Gmail SMTP or Brevo SMTP.
+
+By default, the application may use a development mail service (Ethereal) when SMTP credentials are not configured. This is useful for local testing but does not deliver emails to real inboxes.
+
+To enable real OTP verification emails:
+
+### Gmail SMTP Setup
+
+1. Enable **2-Step Verification** on your Gmail account
+2. Generate a **Google App Password**
+3. Add these values to `backend/.env`
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_16_char_app_password
+```
+
+> ⚠️ If SMTP credentials are not configured, Schedula falls back to a development mail service (Ethereal/mock SMTP). Emails may appear as "sent" in backend logs but will not arrive in real inboxes.
+
 ### 3. Frontend
 
 ```bash
