@@ -88,6 +88,7 @@ function consoleTransport() {
 async function getTransporter() {
   if (transporterPromise) return transporterPromise;
 
+  // 1. Brevo (optional)
   if (process.env.BREVO_API_KEY) {
     transportInfo = 'Brevo HTTP API';
     console.log('[mailer:debug] using Brevo HTTP API');
@@ -95,32 +96,24 @@ async function getTransporter() {
     return transporterPromise;
   }
 
-  if (process.env.SMTP_HOST) {
+  // 2. SMTP (Gmail or other)
+  if (
+    process.env.SMTP_HOST &&
+    process.env.SMTP_USER &&
+    process.env.SMTP_PASS
+  ) {
     transportInfo = `SMTP ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}`;
+
+    console.log('[mailer:debug] using SMTP transport');
+
     transporterPromise = Promise.resolve(buildSmtpTransport());
     return transporterPromise;
   }
 
-  // Try Ethereal (creates an ephemeral test inbox; viewable via console-printed URL)
-  transporterPromise = nodemailer.createTestAccount()
-    .then((account) => {
-      transportInfo = `Ethereal (${account.user})`;
-      console.log(`[mailer] Using Ethereal test inbox: ${account.user}`);
-      console.log(`[mailer] Open https://ethereal.email/login with the password printed below to inspect outgoing mail.`);
-      console.log(`[mailer] Ethereal pass: ${account.pass}`);
-      return nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: { user: account.user, pass: account.pass },
-      });
-    })
-    .catch((e) => {
-      transportInfo = `console-only (Ethereal unavailable: ${e.message})`;
-      console.warn(`[mailer] ${transportInfo}`);
-      return consoleTransport();
-    });
-  return transporterPromise;
+  // 3. FAIL FAST (IMPORTANT FOR YOUR BUG)
+  throw new Error(
+    "No mail service configured. Set BREVO_API_KEY or SMTP credentials in .env"
+  );
 }
 
 async function sendMail({ to, subject, html, text }) {
