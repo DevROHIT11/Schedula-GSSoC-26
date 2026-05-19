@@ -279,6 +279,7 @@ exports.config = (_req, res) => {
     upi_name: process.env.DEMO_UPI_NAME || 'Schedula',
   });
 };
+<<<<<<< HEAD
 
 //Subscription orders 
 exports.createSubscriptionOrder = async (req, res) => {
@@ -425,3 +426,5 @@ exports.confirmUpiSubscription = async (req, res) => {
     conn.release();
   }
 };
+=======
+>>>>>>> upstream/main

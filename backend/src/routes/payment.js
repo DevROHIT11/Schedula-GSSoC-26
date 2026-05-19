@@ -9,8 +9,11 @@ router.post('/verify',          auth, ah(c.verify));
 router.post('/fail',            auth, ah(c.fail));
 router.post('/upi-confirm',     auth, ah(c.confirmUpi));
 
+<<<<<<< HEAD
 router.post('/create-subscription-order', auth, ah(c.createSubscriptionOrder));
 router.post('/verify-subscription',       auth, ah(c.verifySubscription));
 router.post('/upi-confirm-subscription',  auth, ah(c.confirmUpiSubscription));
 
+=======
+>>>>>>> upstream/main
 module.exports = router;
