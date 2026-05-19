@@ -1,16 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
 import { Check, Sparkles, Crown, Award, Loader2, QrCode, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { api } from '../api/client';
 import { loadRazorpay, openRazorpay } from '../utils/razorpay';
 import UpiQrModal from '../components/UpiQrModal.jsx';
-=======
-import { Check, Sparkles, Crown, Award, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { api } from '../api/client';
->>>>>>> upstream/main
 
 const PLAN_ICON = { silver: Sparkles, gold: Award, platinum: Crown };
 
@@ -22,7 +16,6 @@ export default function Plans() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
 
-<<<<<<< HEAD
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [payConfig, setPayConfig] = useState({ upi_vpa: 'success@razorpay', upi_name: 'Schedula', is_mock: true });
@@ -42,14 +35,6 @@ export default function Plans() {
   };
 
   const subscribeFree = async (planKey) => {
-=======
-  useEffect(() => {
-    api.get('/subscriptions/plans').then((d) => setPlans(d.plans || [])).catch((e) => setError(e.message));
-    api.get('/subscriptions/mine').then((d) => setCurrent(d.subscription)).catch(() => {});
-  }, []);
-
-  const subscribe = async (planKey) => {
->>>>>>> upstream/main
     setBusyKey(planKey); setError(''); setInfo('');
     try {
       const d = await api.post('/subscriptions/subscribe', { plan_key: planKey });
@@ -60,7 +45,6 @@ export default function Plans() {
     finally { setBusyKey(null); }
   };
 
-<<<<<<< HEAD
   const submitPayment = async () => {
     if (!selectedPlan) return;
     setBusyKey(selectedPlan.key); setError(''); setInfo('');
@@ -118,8 +102,6 @@ export default function Plans() {
     } catch (e) { setError(e.message || 'Could not record UPI payment'); }
   };
 
-=======
->>>>>>> upstream/main
   const cancel = async () => {
     if (!confirm('Cancel your current subscription?')) return;
     await api.post('/subscriptions/cancel');
@@ -175,11 +157,7 @@ export default function Plans() {
                 <button className="btn-outline w-full mt-6" onClick={cancel}>Cancel subscription</button>
               ) : (
                 <button className={`${featured ? 'btn-primary' : 'btn-outline'} w-full mt-6`}
-<<<<<<< HEAD
                   onClick={() => handleSubscribeClick(p)} disabled={busyKey === p.key}>
-=======
-                  onClick={() => subscribe(p.key)} disabled={busyKey === p.key}>
->>>>>>> upstream/main
                   {busyKey === p.key ? <Loader2 size={14} className="animate-spin" /> : null}
                   {busyKey === p.key ? 'Activating…' : (p.price_monthly === 0 ? 'Activate' : 'Subscribe')}
                 </button>
@@ -192,7 +170,6 @@ export default function Plans() {
       <div className="text-center mt-10">
         <button onClick={() => nav('/')} className="btn-ghost">Continue browsing services →</button>
       </div>
-<<<<<<< HEAD
 
       {selectedPlan && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setSelectedPlan(null)}>
@@ -238,8 +215,6 @@ export default function Plans() {
           onConfirm={confirmUpi}
         />
       )}
-=======
->>>>>>> upstream/main
     </div>
   );
 }

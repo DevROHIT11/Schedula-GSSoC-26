@@ -196,6 +196,10 @@ exports.verify = async (req, res) => {
 // no signature to verify, so this confirms the booking after the user taps
 // "I've completed the payment". Method recorded as `upi`.
 exports.confirmUpi = async (req, res) => {
+  if (process.env.NODE_ENV !== 'development' && isLive) {
+    throw new HttpError(403, 'UPI demo confirmation is not allowed in production.');
+  }
+
   const bookingId = Number(req.body.booking_id);
   const upiRef = String(req.body.upi_reference || `upi_demo_${Date.now()}`);
   if (!bookingId) throw new HttpError(400, 'booking_id required');
@@ -279,7 +283,6 @@ exports.config = (_req, res) => {
     upi_name: process.env.DEMO_UPI_NAME || 'Schedula',
   });
 };
-<<<<<<< HEAD
 
 //Subscription orders 
 exports.createSubscriptionOrder = async (req, res) => {
@@ -391,6 +394,10 @@ exports.verifySubscription = async (req, res) => {
 };
 
 exports.confirmUpiSubscription = async (req, res) => {
+  if (process.env.NODE_ENV !== 'development' && isLive) {
+    throw new HttpError(403, 'UPI demo confirmation is not allowed in production.');
+  }
+
   const planKey = String(req.body.plan_key || '').trim();
   if (!planKey) throw new HttpError(400, 'plan_key required');
 
@@ -426,5 +433,3 @@ exports.confirmUpiSubscription = async (req, res) => {
     conn.release();
   }
 };
-=======
->>>>>>> upstream/main
