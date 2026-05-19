@@ -1,0 +1,118 @@
+/* Interactive category-card animations & hover transitions.
+   Kept in plain CSS so Tailwind doesn't have to compile keyframes. */
+
+/* === keyframes === */
+@keyframes cat-heartbeat {
+  0%, 28%, 70%, 100% { transform: scale(1); }
+  14% { transform: scale(1.18); }
+  42% { transform: scale(1.08); }
+}
+
+@keyframes cat-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes cat-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-3px) rotate(2deg); }
+}
+
+@keyframes cat-glow {
+  0%, 100% { filter: drop-shadow(0 0 0 currentColor); opacity: 0.92; }
+  50%      { filter: drop-shadow(0 0 10px currentColor); opacity: 1; }
+}
+
+@keyframes cat-wrench {
+  0%, 100% { transform: rotate(-12deg); }
+  50%      { transform: rotate(12deg); }
+}
+
+@keyframes cat-shine {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%)  skewX(-20deg); }
+}
+
+/* === card === */
+.cat-card {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transform: translateZ(0);                 /* GPU layer, no flicker */
+  transition:
+    transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-color 300ms ease;
+}
+
+.cat-card:hover,
+.cat-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -22px rgba(15, 14, 12, 0.18);
+  border-color: rgba(75, 72, 62, 0.35);
+}
+
+.cat-card:focus-visible {
+  outline: 3px solid rgba(79, 92, 232, 0.45);
+  outline-offset: 3px;
+}
+
+/* shine sweep on hover */
+.cat-card .cat-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.cat-card .cat-shine::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.55), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+}
+.cat-card:hover .cat-shine::before {
+  animation: cat-shine 900ms ease-out forwards;
+}
+
+/* hover overlay reveal */
+.cat-overlay {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 300ms ease, transform 300ms ease;
+  pointer-events: none;
+}
+.cat-card:hover .cat-overlay,
+.cat-card:focus-within .cat-overlay {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* on touch / no-hover devices, show the description by default */
+@media (hover: none) {
+  .cat-overlay { opacity: 1; transform: none; pointer-events: auto; }
+  .cat-card .cat-shine { display: none; }
+}
+
+/* === icon animations (only run while card is hovered) === */
+.cat-icon { display: inline-flex; transform-origin: center; transition: transform 250ms ease; }
+
+.cat-card:hover .cat-icon-pulse  { animation: cat-heartbeat 1.4s ease-in-out infinite; }
+.cat-card:hover .cat-icon-bounce { animation: cat-bounce    900ms ease-in-out infinite; }
+.cat-card:hover .cat-icon-float  { animation: cat-float     3s    ease-in-out infinite; }
+.cat-card:hover .cat-icon-glow   { animation: cat-glow      2s    ease-in-out infinite; }
+.cat-card:hover .cat-icon-wrench { animation: cat-wrench    1.4s  ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-card,
+  .cat-card * { animation: none !important; transition: none !important; }
+  .cat-card:hover { transform: none; }
+}

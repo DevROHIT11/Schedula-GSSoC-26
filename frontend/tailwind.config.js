@@ -1,0 +1,127 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        // Brand — refined indigo, slightly deeper for stronger contrast on cream.
+        brand: {
+          50:  '#eef1ff',
+          100: '#dde3ff',
+          200: '#bcc6ff',
+          300: '#94a2ff',
+          400: '#6b7cf5',
+          500: '#4f5ce8',
+          600: '#3f47cc',
+          700: '#3438a3',
+          800: '#2a2c7d',
+          900: '#1d1f5c',
+        },
+        // Accent — warm coral, used sparingly for CTAs/highlights (SimplyBook flavor).
+        accent: {
+          50:  '#fff4ec',
+          100: '#ffe4d2',
+          200: '#ffc6a0',
+          300: '#ffa066',
+          400: '#ff7c3a',
+          500: '#f5601b',
+          600: '#dd4910',
+          700: '#b53710',
+          800: '#8e2c12',
+          900: '#722612',
+        },
+        // Sage — quiet success / confirmation.
+        sage: {
+          50:  '#f1f7f2',
+          100: '#dceee0',
+          200: '#bcdfc4',
+          300: '#8fc89c',
+          400: '#62ad73',
+          500: '#3f9054',
+          600: '#2d7341',
+          700: '#255b35',
+          800: '#1f482c',
+          900: '#173621',
+        },
+        // Ink — warm neutral scale (cream-leaning rather than slate-blue).
+        // Page background defaults to ink-50 so the whole app shifts warm.
+        ink: {
+          50:  '#faf9f5',
+          100: '#f3f1ea',
+          150: '#ecead0',
+          200: '#e6e2d4',
+          300: '#cbc6b3',
+          400: '#9a9587',
+          500: '#6c6759',
+          600: '#4b483e',
+          700: '#33302a',
+          800: '#1f1d19',
+          900: '#0f0e0c',
+        },
+      },
+      boxShadow: {
+        // Quieter, paper-grade shadows. Defaults to almost nothing — the editorial
+        // look relies on borders + whitespace, not deep drop-shadows.
+        'soft':  '0 1px 2px 0 rgba(15, 14, 12, 0.04)',
+        'card':  '0 1px 0 0 rgba(15, 14, 12, 0.03), 0 12px 24px -16px rgba(15, 14, 12, 0.10)',
+        'pop':   '0 4px 12px -2px rgba(15, 14, 12, 0.08), 0 18px 40px -22px rgba(15, 14, 12, 0.18)',
+        'glow':  '0 0 0 3px rgba(79, 92, 232, 0.18)',
+        'inner-line': 'inset 0 0 0 1px rgba(15, 14, 12, 0.06)',
+      },
+      borderRadius: {
+        'xl':  '0.875rem',
+        '2xl': '1.125rem',
+        '3xl': '1.5rem',
+        '4xl': '2rem',
+      },
+      fontFamily: {
+        sans:    ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif:   ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
+      },
+      letterSpacing: {
+        tightest: '-0.04em',
+        crisp:    '-0.02em',
+      },
+      keyframes: {
+        'fade-in':   { '0%': { opacity: 0, transform: 'translateY(6px)' }, '100%': { opacity: 1, transform: 'none' } },
+        'slide-up':  { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'none' } },
+        'pulse-soft':{ '0%,100%':{ opacity: 0.6 }, '50%': { opacity: 1 } },
+        'shimmer':   { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+        'marquee':   { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
+        'glow-drift':{ '0%,100%': { boxShadow: '0 24px 60px -32px rgba(79,92,232,0.25)' },
+                       '50%':     { boxShadow: '0 30px 70px -30px rgba(245,96,27,0.28)' } },
+        'float-y':   { '0%,100%': { transform: 'translateY(0) rotate(0deg)' },
+                       '50%':     { transform: 'translateY(-22px) rotate(6deg)' } },
+        'float-x':   { '0%,100%': { transform: 'translateX(0) rotate(0deg)' },
+                       '50%':     { transform: 'translateX(18px) rotate(-8deg)' } },
+        'orbit':     { '0%':   { transform: 'translate(0,0) rotate(0deg)' },
+                       '25%':  { transform: 'translate(14px,-18px) rotate(90deg)' },
+                       '50%':  { transform: 'translate(0,-30px) rotate(180deg)' },
+                       '75%':  { transform: 'translate(-14px,-18px) rotate(270deg)' },
+                       '100%': { transform: 'translate(0,0) rotate(360deg)' } },
+        'breathe':   { '0%,100%': { transform: 'scale(1)', opacity: 0.55 },
+                       '50%':     { transform: 'scale(1.12)', opacity: 0.85 } },
+      },
+      animation: {
+        'fade-in':   'fade-in 280ms ease-out both',
+        'slide-up':  'slide-up 320ms ease-out both',
+        'pulse-soft':'pulse-soft 1.6s ease-in-out infinite',
+        'shimmer':   'shimmer 1.4s linear infinite',
+        'marquee':   'marquee 38s linear infinite',
+        'glow-drift':'glow-drift 6s ease-in-out infinite',
+        'float-y':   'float-y 9s ease-in-out infinite',
+        'float-x':   'float-x 11s ease-in-out infinite',
+        'orbit':     'orbit 22s linear infinite',
+        'orbit-slow':'orbit 36s linear infinite',
+        'breathe':   'breathe 7s ease-in-out infinite',
+      },
+      backgroundImage: {
+        'mesh-1': 'radial-gradient(at 20% 0%, rgba(79,92,232,0.14) 0px, transparent 50%), radial-gradient(at 80% 100%, rgba(245,96,27,0.14) 0px, transparent 50%)',
+        'grid-fade': 'linear-gradient(to bottom, rgba(250,249,245,0) 0%, rgba(250,249,245,1) 100%)',
+        'noise': "url(\"data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+      },
+    },
+  },
+  plugins: [],
+};

@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { @apply h-full; }
+  body {
+    @apply bg-ink-50 text-ink-800 antialiased font-sans;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  ::-webkit-scrollbar       { @apply w-2 h-2; }
+  ::-webkit-scrollbar-thumb { @apply bg-ink-200 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-ink-300; }
+
+  /* Editorial display headings get the display font automatically. */
+  h1, h2, h3, .h-display { @apply font-display tracking-crisp; }
+
+  /* Tighter selection highlight in brand. */
+  ::selection { background: rgba(79, 92, 232, 0.18); color: inherit; }
+}
+
+@layer components {
+  /* ── Surfaces ─────────────────────────────────────────────────────── */
+  .card        { @apply bg-white rounded-2xl border border-ink-200 shadow-soft; }
+  .card-hover  { @apply card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card hover:border-ink-300; }
+  .panel       { @apply bg-white rounded-3xl border border-ink-200; }
+  .surface-muted { @apply bg-ink-100/70 rounded-2xl border border-ink-200; }
+
+  /* ── Buttons ──────────────────────────────────────────────────────── */
+  .btn         { @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed select-none; }
+  .btn-primary { @apply btn bg-ink-900 text-white hover:bg-ink-800 active:bg-ink-700 shadow-soft; }
+  .btn-accent  { @apply btn bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700 shadow-soft; }
+  .btn-brand   { @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-soft; }
+  .btn-ghost   { @apply btn text-ink-700 hover:bg-ink-100; }
+  .btn-outline { @apply btn border border-ink-200 text-ink-800 bg-white hover:border-ink-400 hover:bg-ink-50; }
+  .btn-soft    { @apply btn bg-brand-50 text-brand-700 hover:bg-brand-100; }
+
+  /* ── Inputs ───────────────────────────────────────────────────────── */
+  .input       { @apply w-full px-3.5 py-2.5 rounded-xl border border-ink-200 bg-white text-ink-900 placeholder-ink-400 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100 transition; }
+  .label       { @apply block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 mb-1.5; }
+
+  /* ── Pills / chips ────────────────────────────────────────────────── */
+  .pill        { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-transparent; }
+  .pill-brand  { @apply pill bg-brand-50 text-brand-700; }
+  .pill-accent { @apply pill bg-accent-50 text-accent-700; }
+  .pill-green  { @apply pill bg-sage-50 text-sage-700; }
+  .pill-amber  { @apply pill bg-amber-50 text-amber-800; }
+  .pill-rose   { @apply pill bg-rose-50 text-rose-700; }
+  .pill-slate  { @apply pill bg-ink-100 text-ink-700; }
+  .pill-outline{ @apply pill bg-white text-ink-700 border-ink-200; }
+
+  .stat-card   { @apply card p-4 flex items-start justify-between gap-3; }
+
+  .nav-link    { @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900 transition; }
+  .nav-link.active { @apply bg-ink-900 text-white hover:bg-ink-800; }
+
+  /* ── Editorial section header ─────────────────────────────────────── */
+  .eyebrow     { @apply inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500; }
+  .section-title { @apply font-display text-2xl sm:text-3xl font-semibold text-ink-900 tracking-crisp; }
+  .section-sub   { @apply text-sm sm:text-base text-ink-500 max-w-xl; }
+
+  /* ── Divider with editorial label ─────────────────────────────────── */
+  .rule        { @apply flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] text-ink-400 font-semibold; }
+  .rule::before, .rule::after { content: ''; @apply h-px bg-ink-200 flex-1; }
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────────────── */
+.shimmer-bg {
+  background: linear-gradient(90deg, #efede6 0%, #e2dfd5 50%, #efede6 100%);
+  background-size: 200% 100%;
+  @apply animate-shimmer rounded-lg;
+}
+
+/* ── Subtle paper grain overlay (optional class) ────────────────────── */
+.paper-grain {
+  position: relative;
+}
+.paper-grain::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
