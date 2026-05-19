@@ -323,6 +323,12 @@ exports.createSubscriptionOrder = async (req, res) => {
     };
   }
 
+  await pool.query(
+    `INSERT INTO subscription_orders (user_id, plan_key, amount, razorpay_order_id, status)
+     VALUES (?, ?, ?, ?, 'pending')`,
+    [req.user.id, planKey, Number(plan.price_monthly), order.id]
+  );
+
   res.status(201).json({
     razorpay_order_id: order.id,
     amount: order.amount,
@@ -340,6 +346,17 @@ exports.verifySubscription = async (req, res) => {
   if (!razorpay_order_id) throw new HttpError(400, 'razorpay_order_id required');
   if (!plan_key) throw new HttpError(400, 'plan_key required');
 
+  const [orders] = await pool.query(
+    'SELECT * FROM subscription_orders WHERE razorpay_order_id = ? ORDER BY id DESC LIMIT 1',
+    [razorpay_order_id]
+  );
+  if (!orders.length) throw new HttpError(404, 'Order not found');
+  const dbOrder = orders[0];
+
+  if (dbOrder.user_id !== req.user.id) throw new HttpError(403, 'Forbidden: Order does not belong to you');
+  if (dbOrder.status === 'paid') return res.json({ verified: true, already: true, plan_key: dbOrder.plan_key });
+  if (dbOrder.plan_key !== plan_key) throw new HttpError(400, 'Plan key mismatch');
+
   const isMockOrder = String(razorpay_order_id).startsWith('order_mock_');
   let verified = false;
 
@@ -356,10 +373,10 @@ exports.verifySubscription = async (req, res) => {
   }
 
   if (!verified) {
+    await pool.query("UPDATE subscription_orders SET status='failed' WHERE id=?", [dbOrder.id]);
     throw new HttpError(400, 'Signature verification failed — payment rejected');
   }
 
-  // Once verified, activate the subscription via the subscription controller logic
   const [plans] = await pool.query('SELECT * FROM subscription_plans WHERE `key`=? AND is_active=1', [plan_key]);
   if (!plans.length) throw new HttpError(404, 'Plan not found');
   const plan = plans[0];
@@ -367,6 +384,12 @@ exports.verifySubscription = async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+
+    await conn.query(
+      `UPDATE subscription_orders SET status='paid', payment_id=?, payment_signature=?, payment_method=? WHERE id=?`,
+      [razorpay_payment_id || `pay_mock_${Date.now()}`, razorpay_signature || 'mock_signature', isMockOrder ? 'mock' : 'razorpay', dbOrder.id]
+    );
+
     await conn.query(`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'`, [req.user.id]);
     
     const [r] = await conn.query(
@@ -399,6 +422,7 @@ exports.confirmUpiSubscription = async (req, res) => {
   }
 
   const planKey = String(req.body.plan_key || '').trim();
+  const upiRef = String(req.body.upi_reference || \`upi_demo_\${Date.now()}\`);
   if (!planKey) throw new HttpError(400, 'plan_key required');
 
   const [plans] = await pool.query('SELECT * FROM subscription_plans WHERE `key`=? AND is_active=1', [planKey]);
@@ -408,20 +432,28 @@ exports.confirmUpiSubscription = async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    await conn.query(`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'`, [req.user.id]);
+
+    // Log the UPI payment in the subscription_orders table
+    await conn.query(
+      \`INSERT INTO subscription_orders (user_id, plan_key, amount, razorpay_order_id, payment_id, status, payment_method)
+       VALUES (?, ?, ?, ?, ?, 'paid', 'upi')\`,
+      [req.user.id, planKey, Number(plan.price_monthly), \`order_upi_\${Date.now()}\`, upiRef]
+    );
+
+    await conn.query(\`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'\`, [req.user.id]);
     
     const [r] = await conn.query(
-      `INSERT INTO user_subscriptions (user_id, plan_id, started_at, expires_at, status)
-       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active')`,
+      \`INSERT INTO user_subscriptions (user_id, plan_id, started_at, expires_at, status)
+       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active')\`,
       [req.user.id, plan.id]
     );
 
     const bonus = plan.priority_level === 2 ? 1000 : plan.priority_level === 1 ? 300 : 50;
     if (bonus > 0) {
       await conn.query(
-        `INSERT INTO credit_transactions (user_id, amount, reason, expires_at)
-         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY))`,
-        [req.user.id, bonus, `${plan.name} subscription bonus`]
+        \`INSERT INTO credit_transactions (user_id, amount, reason, expires_at)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY))\`,
+        [req.user.id, bonus, \`\${plan.name} subscription bonus\`]
       );
     }
     await conn.commit();

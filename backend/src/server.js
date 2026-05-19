@@ -50,9 +50,16 @@ app.use('/api/master',         masterRoutes);
 app.use((_req, res) => res.status(404).json({ message: 'Not found' }));
 app.use(errorHandler);
 
+const pool = require('./config/db');
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
-  // Background loop: 60 s reminder dispatcher.
-  require('./services/reminderService').start();
-});
+
+async function startServer() {
+  await pool.initializeDatabase();
+  app.listen(port, () => {
+    console.log(`API listening on http://localhost:${port}`);
+    // Background loop: 60 s reminder dispatcher.
+    require('./services/reminderService').start();
+  });
+}
+
+startServer();
