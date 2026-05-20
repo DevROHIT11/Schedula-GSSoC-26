@@ -127,14 +127,39 @@ async function createBooking({
     if (startDate.getTime() < Date.now() - 60 * 1000)
       throw new HttpError(400, 'Cannot book a slot in the past');
     const endDate   = new Date(startDate.getTime() + service.duration_minutes * 60000);
-
+    
     const userPriority = await getUserPriority(conn, customerId);
     const dateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     const slots = await getAvailableSlots({ serviceId, date: dateOnly, conn, userPriority });
     const startStr = toMysqlLocal(startDate);
     if (!isAlignedToBaseSlots(slots, startStr))
       throw new HttpError(400, 'Slot not in service availability');
-
+    // ── Customer overlap check ─────────────────────────────────────────
+    // Prevent same customer booking two services at overlapping times.
+    // FOR UPDATE serialises concurrent requests for the same customer.
+    const endStr = toMysqlLocal(endDate);
+    const [overlaps] = await conn.query(
+      `SELECT b.id, s.name AS service_name, b.start_datetime, b.end_datetime
+         FROM bookings b
+         JOIN services s ON s.id = b.service_id
+        WHERE b.customer_id = ?
+          AND b.status IN ('reserved', 'pending', 'confirmed')
+          AND b.start_datetime < ?
+          AND b.end_datetime   > ?
+        FOR UPDATE`,
+      [customerId, endStr, startStr]
+    );
+    if (overlaps.length) {
+      const clash = overlaps[0];
+      throw new HttpError(
+        409,
+        `You already have a booking for "${clash.service_name}" from ` +
+        `${clash.start_datetime} to ${clash.end_datetime} that overlaps with this slot. ` +
+        `Please choose a different time.`
+      );
+    }
+    // ──────────────────────────────────────────────────────────────────
+    
     const [resources] = await conn.query(
       'SELECT * FROM resources WHERE service_id=? AND is_active=1', [serviceId]);
     if (!resources.length) throw new HttpError(409, 'No resources configured');
@@ -294,6 +319,30 @@ async function rescheduleBooking({ bookingId, newStart, customerId }) {
     const slots = await getAvailableSlots({ serviceId: booking.service_id, date: dateOnly, conn });
     if (!isAlignedToBaseSlots(slots, newStartStr))
       throw new HttpError(400, 'Slot not in service availability');
+
+    // ── Customer overlap check for reschedule ─────────────────────────
+    const newEndStr = toMysqlLocal(newEndDate);
+    const [reschedOverlaps] = await conn.query(
+      `SELECT b.id, s.name AS service_name, b.start_datetime, b.end_datetime
+         FROM bookings b
+         JOIN services s ON s.id = b.service_id
+        WHERE b.customer_id = ?
+          AND b.id <> ?
+          AND b.status IN ('reserved', 'pending', 'confirmed')
+          AND b.start_datetime < ?
+          AND b.end_datetime   > ?
+        FOR UPDATE`,
+      [booking.customer_id, bookingId, newEndStr, newStartStr]
+    );
+    if (reschedOverlaps.length) {
+      const clash = reschedOverlaps[0];
+      throw new HttpError(
+        409,
+        `Rescheduling would conflict with your existing booking for ` +
+        `"${clash.service_name}" from ${clash.start_datetime} to ${clash.end_datetime}.`
+      );
+    }
+    // ──────────────────────────────────────────────────────────────────
 
     const [active] = await conn.query(
       `SELECT id, capacity_taken FROM bookings
