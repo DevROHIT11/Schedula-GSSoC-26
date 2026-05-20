@@ -55,10 +55,15 @@ const port = process.env.PORT || 4000;
 
 async function startServer() {
   await pool.initializeDatabase();
-  app.listen(port, () => {
-    console.log(`API listening on http://localhost:${port}`);
-    // Background loop: 60 s reminder dispatcher.
-    require('./services/reminderService').start();
+  await new Promise((resolve, reject) => {
+    const server = app.listen(port);
+    server.once('error', reject);
+    server.once('listening', () => {
+      console.log(`API listening on http://localhost:${port}`);
+      // Background loop: 60 s reminder dispatcher.
+      require('./services/reminderService').start();
+      resolve();
+    });
   });
 }
 

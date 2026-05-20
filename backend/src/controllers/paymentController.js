@@ -422,7 +422,7 @@ exports.confirmUpiSubscription = async (req, res) => {
   }
 
   const planKey = String(req.body.plan_key || '').trim();
-  const upiRef = String(req.body.upi_reference || \`upi_demo_\${Date.now()}\`);
+  const upiRef = String(req.body.upi_reference || `upi_demo_${Date.now()}`);
   if (!planKey) throw new HttpError(400, 'plan_key required');
 
   const [plans] = await pool.query('SELECT * FROM subscription_plans WHERE `key`=? AND is_active=1', [planKey]);
@@ -435,25 +435,25 @@ exports.confirmUpiSubscription = async (req, res) => {
 
     // Log the UPI payment in the subscription_orders table
     await conn.query(
-      \`INSERT INTO subscription_orders (user_id, plan_key, amount, razorpay_order_id, payment_id, status, payment_method)
-       VALUES (?, ?, ?, ?, ?, 'paid', 'upi')\`,
-      [req.user.id, planKey, Number(plan.price_monthly), \`order_upi_\${Date.now()}\`, upiRef]
+      `INSERT INTO subscription_orders (user_id, plan_key, amount, razorpay_order_id, payment_id, status, payment_method)
+       VALUES (?, ?, ?, ?, ?, 'paid', 'upi')`,
+      [req.user.id, planKey, Number(plan.price_monthly), `order_upi_${Date.now()}`, upiRef]
     );
 
-    await conn.query(\`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'\`, [req.user.id]);
+    await conn.query(`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'`, [req.user.id]);
     
     const [r] = await conn.query(
-      \`INSERT INTO user_subscriptions (user_id, plan_id, started_at, expires_at, status)
-       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active')\`,
+      `INSERT INTO user_subscriptions (user_id, plan_id, started_at, expires_at, status)
+       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active')`,
       [req.user.id, plan.id]
     );
 
     const bonus = plan.priority_level === 2 ? 1000 : plan.priority_level === 1 ? 300 : 50;
     if (bonus > 0) {
       await conn.query(
-        \`INSERT INTO credit_transactions (user_id, amount, reason, expires_at)
-         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY))\`,
-        [req.user.id, bonus, \`\${plan.name} subscription bonus\`]
+        `INSERT INTO credit_transactions (user_id, amount, reason, expires_at)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY))`,
+        [req.user.id, bonus, `${plan.name} subscription bonus`]
       );
     }
     await conn.commit();
