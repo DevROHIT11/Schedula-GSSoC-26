@@ -2,7 +2,8 @@
 //   1. REMINDER     — once per booking, sent 15-60 min before start
 //   2. IMMINENT     — once per booking, sent 0-5 min before start (to BOTH
 //                     customer AND organiser, with the join link)
-// Idempotent via the bookings.reminder_sent / imminent_notify_sent flags.
+//   3. THIRTY_MIN   — once per booking, sent exactly 30 min before start
+// Idempotent via the bookings.reminder_sent / imminent_notify_sent / thirty_min_notify_sent flags.
 
 const pool = require('../config/db');
 const { sendMail } = require('./mailer');
@@ -28,39 +29,28 @@ async function reminderTick() {
     for (const b of rows) {
       // Atomic claim — only proceed if we win the race against other workers
       const [claim] = await pool.query(
-        'UPDATE bookings SET thirty_min_notify_sent = 1 WHERE id = ? AND thirty_min_notify_sent = 0',
+        'UPDATE bookings SET reminder_sent=1 WHERE id=? AND reminder_sent=0',
         [b.id]
       );
       if (claim.affectedRows === 0) continue;
 
-      // In-app notification
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, body, link)
-         VALUES (?, 'reminder_30min', ?, ?, ?)`,
-        [
-          b.customer_id,
-          '30 minutes until your appointment',
-          `${b.service_name} starts in 30 minutes at ${b.start_datetime}.`,
-          `/booking/${b.id}`,
-        ]
-      );
-
-      // Email
+         VALUES (?, 'reminder', ?, ?, ?)`,
+        [b.customer_id, 'Appointment starting soon',
+         `${b.service_name} starts at ${b.start_datetime}.`,
+         `/booking/${b.id}`]);
       if (b.customer_email) {
         try {
           const tpl = bookingEmail({
-            name: b.customer_name,
-            action: 'reminder_30min',
-            service_name: b.service_name,
-            when: b.start_datetime,
-            end: b.end_datetime,
-            provider: b.resource_name,
-            status: '30 minutes away',
+            name: b.customer_name, action: 'reminder',
+            service_name: b.service_name, when: b.start_datetime, end: b.end_datetime,
+            provider: b.resource_name, status: 'reminder',
             venue: b.appointment_type === 'virtual' ? 'Online' : b.venue,
             total: b.total_amount,
           });
           sendMail({ to: b.customer_email, ...tpl });
-        } catch { /* ignore mail failures */ }
+        } catch { /* ignore */ }
       }
     }
     if (rows.length) console.log(`[reminder] sent ${rows.length} reminder(s)`);
@@ -71,8 +61,6 @@ async function reminderTick() {
 
 async function imminentTick() {
   try {
-    // Bookings whose start_datetime is between (now - 2 min) and (now + 5 min)
-    // and we haven't fired the imminent notification yet.
     const [rows] = await pool.query(
       `SELECT b.id, b.start_datetime, b.end_datetime, b.appointment_type, b.meeting_link,
               b.total_amount, b.customer_id, b.service_id,
@@ -91,12 +79,16 @@ async function imminentTick() {
           AND b.start_datetime >= DATE_SUB(NOW(), INTERVAL 2 MINUTE)`);
 
     for (const b of rows) {
-      await pool.query('UPDATE bookings SET imminent_notify_sent=1 WHERE id=?', [b.id]);
+      // Atomic claim
+      const [claim] = await pool.query(
+        'UPDATE bookings SET imminent_notify_sent=1 WHERE id=? AND imminent_notify_sent=0',
+        [b.id]
+      );
+      if (claim.affectedRows === 0) continue;
 
       const isVirtual = b.appointment_type === 'virtual';
       const venue = isVirtual ? (b.meeting_link || 'Online') : b.venue;
 
-      // Customer notification + email
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, body, link)
          VALUES (?, 'meeting_now', ?, ?, ?)`,
@@ -114,8 +106,6 @@ async function imminentTick() {
         } catch { /* ignore */ }
       }
 
-      // Organiser notification + email — only for virtual bookings (in-person
-      // organiser is already onsite). Skip if organiser somehow IS the customer.
       if (isVirtual && b.organiser_id !== b.customer_id) {
         await pool.query(
           `INSERT INTO notifications (user_id, type, title, body, link)
@@ -142,9 +132,7 @@ async function imminentTick() {
   }
 }
 
-// Fires once per booking exactly when the window is 28–32 minutes before start.
-// Separate from reminderTick (15–60 min general reminder) so customers always
-// get a precise "30 minutes to go" alert in addition to the earlier heads-up.
+// Fires once per booking exactly when the window is 28-32 minutes before start.
 async function thirtyMinuteTick() {
   try {
     const [rows] = await pool.query(
@@ -164,12 +152,13 @@ async function thirtyMinuteTick() {
           AND b.start_datetime >  DATE_ADD(NOW(), INTERVAL 28 MINUTE)`);
 
     for (const b of rows) {
-      await pool.query(
-        'UPDATE bookings SET thirty_min_notify_sent = 1 WHERE id = ?',
+      // Atomic claim — only proceed if we win the race against other workers
+      const [claim] = await pool.query(
+        'UPDATE bookings SET thirty_min_notify_sent = 1 WHERE id = ? AND thirty_min_notify_sent = 0',
         [b.id]
       );
+      if (claim.affectedRows === 0) continue;
 
-      // In-app notification
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, body, link)
          VALUES (?, 'reminder_30min', ?, ?, ?)`,
@@ -181,7 +170,6 @@ async function thirtyMinuteTick() {
         ]
       );
 
-      // Email
       if (b.customer_email) {
         try {
           const tpl = bookingEmail({
