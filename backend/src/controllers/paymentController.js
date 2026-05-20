@@ -196,6 +196,10 @@ exports.verify = async (req, res) => {
 // no signature to verify, so this confirms the booking after the user taps
 // "I've completed the payment". Method recorded as `upi`.
 exports.confirmUpi = async (req, res) => {
+  if (process.env.NODE_ENV !== 'development' && process.env.ENABLE_DEMO_UPI !== 'true') {
+    throw new HttpError(403, 'UPI demo confirmation is not allowed in production.');
+  }
+
   const bookingId = Number(req.body.booking_id);
   const upiRef = String(req.body.upi_reference || `upi_demo_${Date.now()}`);
   if (!bookingId) throw new HttpError(400, 'booking_id required');
@@ -278,4 +282,197 @@ exports.config = (_req, res) => {
     upi_vpa:  process.env.DEMO_UPI_VPA  || 'success@razorpay',
     upi_name: process.env.DEMO_UPI_NAME || 'Schedula',
   });
+};
+
+//Subscription orders 
+exports.createSubscriptionOrder = async (req, res) => {
+  const planKey = String(req.body.plan_key || '').trim();
+  if (!planKey) throw new HttpError(400, 'plan_key required');
+
+  const [plans] = await pool.query('SELECT * FROM subscription_plans WHERE `key`=? AND is_active=1', [planKey]);
+  if (!plans.length) throw new HttpError(404, 'Plan not found');
+  const plan = plans[0];
+
+  if (Number(plan.price_monthly) <= 0) {
+    throw new HttpError(400, 'Plan is free — nothing to pay');
+  }
+
+  const amountPaise = Math.round(Number(plan.price_monthly) * 100);
+
+  let order;
+  if (isLive) {
+    try {
+      order = await rzp.orders.create({
+        amount: amountPaise,
+        currency: 'INR',
+        receipt: `plan_${plan.id}_${Date.now()}`,
+        payment_capture: 1,
+        notes: { plan_key: planKey, user_id: String(req.user.id) },
+      });
+    } catch (e) {
+      console.error('[razorpay] order create failed:', e.message);
+      throw new HttpError(502, 'Could not create Razorpay order. Check your keys and try again.');
+    }
+  } else {
+    order = {
+      id: `order_mock_plan_${plan.id}_${Date.now()}`,
+      amount: amountPaise,
+      currency: 'INR',
+      receipt: `plan_${plan.id}`,
+      status: 'created',
+    };
+  }
+
+  await pool.query(
+    `INSERT INTO subscription_orders (user_id, plan_key, amount, razorpay_order_id, status)
+     VALUES (?, ?, ?, ?, 'pending')`,
+    [req.user.id, planKey, Number(plan.price_monthly), order.id]
+  );
+
+  res.status(201).json({
+    razorpay_order_id: order.id,
+    amount: order.amount,
+    currency: order.currency,
+    key_id: KEY_ID,
+    is_mock: !isLive,
+    plan_key: planKey,
+    name: 'Schedula',
+    description: `${plan.name} Plan`,
+  });
+};
+
+exports.verifySubscription = async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan_key } = req.body;
+  if (!razorpay_order_id) throw new HttpError(400, 'razorpay_order_id required');
+  if (!plan_key) throw new HttpError(400, 'plan_key required');
+
+  const [orders] = await pool.query(
+    'SELECT * FROM subscription_orders WHERE razorpay_order_id = ? ORDER BY id DESC LIMIT 1',
+    [razorpay_order_id]
+  );
+  if (!orders.length) throw new HttpError(404, 'Order not found');
+  const dbOrder = orders[0];
+
+  if (dbOrder.user_id !== req.user.id) throw new HttpError(403, 'Forbidden: Order does not belong to you');
+  if (dbOrder.status === 'paid') return res.json({ verified: true, already: true, plan_key: dbOrder.plan_key });
+  if (dbOrder.plan_key !== plan_key) throw new HttpError(400, 'Plan key mismatch');
+
+  const isMockOrder = String(razorpay_order_id).startsWith('order_mock_');
+  let verified = false;
+
+  if (isLive && !isMockOrder) {
+    if (!razorpay_payment_id || !razorpay_signature)
+      throw new HttpError(400, 'razorpay_payment_id & razorpay_signature required');
+    const expected = crypto
+      .createHmac('sha256', KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+    verified = safeTimingEq(expected, razorpay_signature);
+  } else {
+    verified = true;
+  }
+
+  if (!verified) {
+    await pool.query("UPDATE subscription_orders SET status='failed' WHERE id=?", [dbOrder.id]);
+    throw new HttpError(400, 'Signature verification failed — payment rejected');
+  }
+
+  const [plans] = await pool.query('SELECT * FROM subscription_plans WHERE `key`=? AND is_active=1', [plan_key]);
+  if (!plans.length) throw new HttpError(404, 'Plan not found');
+  const plan = plans[0];
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    await conn.query(
+      `UPDATE subscription_orders SET status='paid', payment_id=?, payment_signature=?, payment_method=? WHERE id=?`,
+      [razorpay_payment_id || `pay_mock_${Date.now()}`, razorpay_signature || 'mock_signature', isMockOrder ? 'mock' : 'razorpay', dbOrder.id]
+    );
+
+    await conn.query(`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'`, [req.user.id]);
+    
+    const [r] = await conn.query(
+      `INSERT INTO user_subscriptions (user_id, plan_id, started_at, expires_at, status)
+       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active')`,
+      [req.user.id, plan.id]
+    );
+
+    const bonus = plan.priority_level === 2 ? 1000 : plan.priority_level === 1 ? 300 : 50;
+    if (bonus > 0) {
+      await conn.query(
+        `INSERT INTO credit_transactions (user_id, amount, reason, expires_at)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY))`,
+        [req.user.id, bonus, `${plan.name} subscription bonus`]
+      );
+    }
+    await conn.commit();
+    res.json({ verified: true, plan: plan.name, bonus_credits: bonus });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+};
+
+exports.confirmUpiSubscription = async (req, res) => {
+  if (process.env.NODE_ENV !== 'development' && process.env.ENABLE_DEMO_UPI !== 'true') {
+    throw new HttpError(403, 'UPI demo confirmation is not allowed in production.');
+  }
+
+  const planKey = String(req.body.plan_key || '').trim();
+  const upiRef = String(req.body.upi_reference || `upi_demo_${Date.now()}`);
+  if (!planKey) throw new HttpError(400, 'plan_key required');
+
+  const [plans] = await pool.query('SELECT * FROM subscription_plans WHERE `key`=? AND is_active=1', [planKey]);
+  if (!plans.length) throw new HttpError(404, 'Plan not found');
+  const plan = plans[0];
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Idempotency check: short-circuit if order already exists for this payment_id
+    const [existing] = await conn.query(
+      'SELECT id FROM subscription_orders WHERE payment_id=? AND user_id=? FOR UPDATE',
+      [upiRef, req.user.id]
+    );
+
+    if (existing.length > 0) {
+      await conn.commit();
+      return res.json({ verified: true, already: true, plan: plan.name });
+    }
+
+    // Log the UPI payment in the subscription_orders table
+    await conn.query(
+      `INSERT INTO subscription_orders (user_id, plan_key, amount, razorpay_order_id, payment_id, status, payment_method)
+       VALUES (?, ?, ?, ?, ?, 'paid', 'upi')`,
+      [req.user.id, planKey, Number(plan.price_monthly), `order_upi_${Date.now()}`, upiRef]
+    );
+
+    await conn.query(`UPDATE user_subscriptions SET status='cancelled' WHERE user_id=? AND status='active'`, [req.user.id]);
+    
+    const [r] = await conn.query(
+      `INSERT INTO user_subscriptions (user_id, plan_id, started_at, expires_at, status)
+       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), 'active')`,
+      [req.user.id, plan.id]
+    );
+
+    const bonus = plan.priority_level === 2 ? 1000 : plan.priority_level === 1 ? 300 : 50;
+    if (bonus > 0) {
+      await conn.query(
+        `INSERT INTO credit_transactions (user_id, amount, reason, expires_at)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY))`,
+        [req.user.id, bonus, `${plan.name} subscription bonus`]
+      );
+    }
+    await conn.commit();
+    res.json({ verified: true, plan: plan.name, bonus_credits: bonus });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
 };
