@@ -31,11 +31,6 @@ pool.initializeDatabase = async function() {
         INDEX idx_subord_user (user_id)
       ) ENGINE=InnoDB;
     `);
-    try {
-      await pool.query('ALTER TABLE subscription_orders ADD UNIQUE INDEX uq_payment_id (payment_id)');
-    } catch (err) {
-      if (err.code !== 'ER_DUP_KEYNAME') console.warn('[DB] Note: could not add uq_payment_id:', err.message);
-    }
     console.log('[DB] subscription_orders table ready');
   } catch (e) {
     console.error('[DB] Error creating subscription_orders table:', e.message);
