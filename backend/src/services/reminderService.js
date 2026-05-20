@@ -125,9 +125,75 @@ async function imminentTick() {
   }
 }
 
-function start() {
-  reminderTick(); imminentTick();
-  return setInterval(() => { reminderTick(); imminentTick(); }, 60 * 1000);
+// Fires once per booking exactly when the window is 28–32 minutes before start.
+// Separate from reminderTick (15–60 min general reminder) so customers always
+// get a precise "30 minutes to go" alert in addition to the earlier heads-up.
+async function thirtyMinuteTick() {
+  try {
+    const [rows] = await pool.query(
+      `SELECT b.id, b.start_datetime, b.end_datetime, b.appointment_type,
+              b.total_amount, b.customer_id,
+              s.name AS service_name, s.venue,
+              r.name AS resource_name,
+              u.full_name AS customer_name, u.email AS customer_email
+         FROM bookings b
+         JOIN services s ON s.id = b.service_id
+         JOIN resources r ON r.id = b.resource_id
+         JOIN users u ON u.id = b.customer_id
+        WHERE b.status IN ('confirmed', 'reserved', 'pending')
+          AND b.thirty_min_notify_sent = 0
+          AND b.start_datetime > NOW()
+          AND b.start_datetime <= DATE_ADD(NOW(), INTERVAL 32 MINUTE)
+          AND b.start_datetime >  DATE_ADD(NOW(), INTERVAL 28 MINUTE)`);
+
+    for (const b of rows) {
+      await pool.query(
+        'UPDATE bookings SET thirty_min_notify_sent = 1 WHERE id = ?',
+        [b.id]
+      );
+
+      // In-app notification
+      await pool.query(
+        `INSERT INTO notifications (user_id, type, title, body, link)
+         VALUES (?, 'reminder_30min', ?, ?, ?)`,
+        [
+          b.customer_id,
+          '30 minutes until your appointment',
+          `${b.service_name} starts in 30 minutes at ${b.start_datetime}.`,
+          `/booking/${b.id}`,
+        ]
+      );
+
+      // Email
+      if (b.customer_email) {
+        try {
+          const tpl = bookingEmail({
+            name: b.customer_name,
+            action: 'reminder_30min',
+            service_name: b.service_name,
+            when: b.start_datetime,
+            end: b.end_datetime,
+            provider: b.resource_name,
+            status: '30 minutes away',
+            venue: b.appointment_type === 'virtual' ? 'Online' : b.venue,
+            total: b.total_amount,
+          });
+          sendMail({ to: b.customer_email, ...tpl });
+        } catch { /* ignore mail failures */ }
+      }
+    }
+    if (rows.length) console.log(`[30min-reminder] sent ${rows.length} alert(s)`);
+  } catch (e) {
+    console.error('[30min-reminder] tick failed:', e.message);
+  }
 }
 
-module.exports = { start, reminderTick, imminentTick };
+function start() {
+  reminderTick(); imminentTick(); thirtyMinuteTick();
+  return setInterval(
+    () => { reminderTick(); imminentTick(); thirtyMinuteTick(); },
+    60 * 1000
+  );
+}
+
+module.exports = { start, reminderTick, imminentTick, thirtyMinuteTick };
