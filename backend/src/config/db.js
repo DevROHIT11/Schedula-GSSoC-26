@@ -23,7 +23,7 @@ pool.initializeDatabase = async function() {
         plan_key VARCHAR(20) NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
         razorpay_order_id VARCHAR(120) NOT NULL UNIQUE,
-        payment_id VARCHAR(120) NULL,
+        payment_id VARCHAR(120) NULL UNIQUE,
         payment_signature VARCHAR(255) NULL,
         status ENUM('pending','paid','failed') NOT NULL DEFAULT 'pending',
         payment_method VARCHAR(40) NULL,
@@ -31,6 +31,11 @@ pool.initializeDatabase = async function() {
         INDEX idx_subord_user (user_id)
       ) ENGINE=InnoDB;
     `);
+    try {
+      await pool.query('ALTER TABLE subscription_orders ADD UNIQUE INDEX uq_payment_id (payment_id)');
+    } catch (err) {
+      if (err.code !== 'ER_DUP_KEYNAME') console.warn('[DB] Note: could not add uq_payment_id:', err.message);
+    }
     console.log('[DB] subscription_orders table ready');
   } catch (e) {
     console.error('[DB] Error creating subscription_orders table:', e.message);

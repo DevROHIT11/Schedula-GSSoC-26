@@ -196,7 +196,7 @@ exports.verify = async (req, res) => {
 // no signature to verify, so this confirms the booking after the user taps
 // "I've completed the payment". Method recorded as `upi`.
 exports.confirmUpi = async (req, res) => {
-  if (process.env.NODE_ENV !== 'development' && isLive) {
+  if (process.env.NODE_ENV !== 'development' && process.env.ENABLE_DEMO_UPI !== 'true') {
     throw new HttpError(403, 'UPI demo confirmation is not allowed in production.');
   }
 
@@ -417,7 +417,7 @@ exports.verifySubscription = async (req, res) => {
 };
 
 exports.confirmUpiSubscription = async (req, res) => {
-  if (process.env.NODE_ENV !== 'development' && isLive) {
+  if (process.env.NODE_ENV !== 'development' && process.env.ENABLE_DEMO_UPI !== 'true') {
     throw new HttpError(403, 'UPI demo confirmation is not allowed in production.');
   }
 
@@ -432,6 +432,17 @@ exports.confirmUpiSubscription = async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+
+    // Idempotency check: short-circuit if order already exists for this payment_id
+    const [existing] = await conn.query(
+      'SELECT id FROM subscription_orders WHERE payment_id=? AND user_id=? FOR UPDATE',
+      [upiRef, req.user.id]
+    );
+
+    if (existing.length > 0) {
+      await conn.commit();
+      return res.json({ verified: true, already: true, plan: plan.name });
+    }
 
     // Log the UPI payment in the subscription_orders table
     await conn.query(
