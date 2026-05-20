@@ -26,24 +26,41 @@ async function reminderTick() {
           AND b.start_datetime <= DATE_ADD(NOW(), INTERVAL 60 MINUTE)
           AND b.start_datetime > DATE_ADD(NOW(), INTERVAL 5 MINUTE)`);
     for (const b of rows) {
-      await pool.query('UPDATE bookings SET reminder_sent=1 WHERE id=?', [b.id]);
+      // Atomic claim — only proceed if we win the race against other workers
+      const [claim] = await pool.query(
+        'UPDATE bookings SET thirty_min_notify_sent = 1 WHERE id = ? AND thirty_min_notify_sent = 0',
+        [b.id]
+      );
+      if (claim.affectedRows === 0) continue;
+
+      // In-app notification
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, body, link)
-         VALUES (?, 'reminder', ?, ?, ?)`,
-        [b.customer_id, 'Appointment starting soon',
-         `${b.service_name} starts at ${b.start_datetime}.`,
-         `/booking/${b.id}`]);
+         VALUES (?, 'reminder_30min', ?, ?, ?)`,
+        [
+          b.customer_id,
+          '30 minutes until your appointment',
+          `${b.service_name} starts in 30 minutes at ${b.start_datetime}.`,
+          `/booking/${b.id}`,
+        ]
+      );
+
+      // Email
       if (b.customer_email) {
         try {
           const tpl = bookingEmail({
-            name: b.customer_name, action: 'reminder',
-            service_name: b.service_name, when: b.start_datetime, end: b.end_datetime,
-            provider: b.resource_name, status: 'reminder',
+            name: b.customer_name,
+            action: 'reminder_30min',
+            service_name: b.service_name,
+            when: b.start_datetime,
+            end: b.end_datetime,
+            provider: b.resource_name,
+            status: '30 minutes away',
             venue: b.appointment_type === 'virtual' ? 'Online' : b.venue,
             total: b.total_amount,
           });
           sendMail({ to: b.customer_email, ...tpl });
-        } catch { /* ignore */ }
+        } catch { /* ignore mail failures */ }
       }
     }
     if (rows.length) console.log(`[reminder] sent ${rows.length} reminder(s)`);
