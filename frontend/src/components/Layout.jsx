@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Compass, User, Briefcase, Shield,
-  Bell, LogOut, Menu, X, Sparkles, Coins, Bookmark, Video,
+  Bell, LogOut, Menu, X, Sparkles, Coins, Bookmark, Video, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client';
@@ -72,7 +72,7 @@ function NotificationsBell() {
     if (!user) return;
     try {
       const d = await api.get('/notifications');
-      setItems(d.notifications || []);
+      items(d.notifications || []);
       setUnread(d.unread_count || 0);
     } catch { /* empty */ }
   };
@@ -151,6 +151,37 @@ export default function Layout({ children }) {
   const nav = useNavigate();
   const loc = useLocation();
   const [open, setOpen] = useState(false);
+  
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+
+      if (window.scrollY > 50) {
+        setShowScrollDown(false);
+      } else {
+        setShowScrollDown(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToNextSection = () => {
+    window.scrollTo({ top: window.innerHeight - 80, behavior: 'smooth' });
+  };
+
   const initials = user
     ? (user.full_name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
     : '';
@@ -177,9 +208,8 @@ export default function Layout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen bg-ink-50">
-      {/* Desktop sidebar — generous, editorial, always-visible labels.
-          Fixed width keeps the rhythm steady; no hover-expand surprises. */}
+    <div className="min-h-screen bg-ink-50 relative">
+      {/* Desktop sidebar */}
       <aside
         className="hidden lg:flex lg:flex-col
                    fixed left-0 top-0 h-screen z-40
@@ -229,61 +259,84 @@ export default function Layout({ children }) {
       {/* Reserved gutter so main content sits to the right of the sidebar */}
       <div className="flex lg:pl-[260px]">
 
-      {/* Mobile drawer */}
-      {open && (
-        <>
-          <div className="lg:hidden fixed inset-0 bg-ink-900/40 backdrop-blur-sm z-40" onClick={() => setOpen(false)} />
-          <aside className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-white z-50 px-5 py-5 animate-slide-up overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <Link to="/" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-ink-900 flex items-center justify-center text-white font-display font-bold">S</div>
-                <span className="font-display font-bold tracking-crisp">Schedula</span>
-              </Link>
-              <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-ink-100"><X size={20} /></button>
-            </div>
-            <nav className="space-y-1">
-              {sidebarItems.map((it) => <NavItem key={it.to} {...it} />)}
-            </nav>
-          </aside>
-        </>
-      )}
-
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar — translucent, paper-grade border */}
-        <header className="sticky top-0 z-30 bg-ink-50/85 backdrop-blur-md border-b border-ink-200/70">
-          <div className="px-4 sm:px-8 py-3.5 flex items-center gap-5">
-            <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-2 rounded-full hover:bg-ink-100"><Menu size={20} /></button>
-            <SearchAutocomplete />
-            <div className="flex items-center gap-3 ml-auto">
-              <PlanCreditsBadge />
-              <NotificationsBell />
-              {!user && (
-                <>
-                  <Link to="/login" className="btn-ghost">Sign in</Link>
-                  <Link to="/register" className="btn-primary hidden sm:inline-flex">Get started</Link>
-                </>
-              )}
-              {user && (
-                <Link to="/profile" className="hidden md:flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border border-ink-200 hover:border-ink-400 hover:bg-white transition">
-                  <div className="w-7 h-7 rounded-full overflow-hidden bg-ink-900 text-white text-[11px] font-semibold flex items-center justify-center">
-                    {user.avatar_url
-                      ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : initials}
-                  </div>
-                  <span className="text-sm font-medium">{fullName.split(' ')[0]}</span>
+        {/* Mobile drawer */}
+        {open && (
+          <>
+            <div className="lg:hidden fixed inset-0 bg-ink-900/40 backdrop-blur-sm z-40" onClick={() => setOpen(false)} />
+            <aside className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-white z-50 px-5 py-5 animate-slide-up overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <Link to="/" className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-ink-900 flex items-center justify-center text-white font-display font-bold">S</div>
+                  <span className="font-display font-bold tracking-crisp">Schedula</span>
                 </Link>
-              )}
-            </div>
-          </div>
-        </header>
+                <button onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-ink-100"><X size={20} /></button>
+              </div>
+              <nav className="space-y-1">
+                {sidebarItems.map((it) => <NavItem key={it.to} {...it} />)}
+              </nav>
+            </aside>
+          </>
+        )}
 
-        <main className="flex-1 px-4 sm:px-8 py-8 pb-24 lg:pb-10 max-w-[1400px] w-full mx-auto">
-          {user && <UpcomingMeetingBanner />}
-          {children}
-        </main>
-      </div>
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Topbar */}
+          <header className="sticky top-0 z-30 bg-ink-50/85 backdrop-blur-md border-b border-ink-200/70">
+            <div className="px-4 sm:px-8 py-3.5 flex items-center gap-5">
+              <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-2 rounded-full hover:bg-ink-100"><Menu size={20} /></button>
+              <SearchAutocomplete />
+              <div className="flex items-center gap-3 ml-auto">
+                <PlanCreditsBadge />
+                <NotificationsBell />
+                {!user && (
+                  <>
+                    <Link to="/login" className="btn-ghost">Sign in</Link>
+                    <Link to="/register" className="btn-primary hidden sm:inline-flex">Get started</Link>
+                  </>
+                )}
+                {user && (
+                  <Link to="/profile" className="hidden md:flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border border-ink-200 hover:border-ink-400 hover:bg-white transition">
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-ink-900 text-white text-[11px] font-semibold flex items-center justify-center">
+                      {user.avatar_url
+                        ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : initials}
+                    </div>
+                    <span className="text-sm font-medium">{fullName.split(' ')[0]}</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 px-4 sm:px-8 py-8 pb-24 lg:pb-10 max-w-[1400px] w-full mx-auto">
+            {user && <UpcomingMeetingBanner />}
+            {children}
+          </main>
+        </div>
 
       </div>{/* end of pl-[260px] gutter wrapper */}
+
+      {/* === SCROLL UI BUTTONS === */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 lg:bottom-10 p-3 rounded-full bg-ink-900 text-white shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 z-50 flex items-center justify-center border border-ink-700"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp size={20} strokeWidth={2.5} />
+        </button>
+      )}
+
+      {showScrollDown && loc.pathname === '/' && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 text-center z-50 lg:left-[calc(50%+130px)] lg:bottom-10">
+          <button
+            onClick={scrollToNextSection}
+            className="animate-bounce p-2.5 bg-white border border-ink-200 rounded-full shadow-lg text-ink-600 hover:text-ink-900 hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
+            aria-label="Scroll down"
+          >
+            <ArrowDown size={18} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
 
       {user && <ChatbotWidget />}
       <MobileBottomNav />
