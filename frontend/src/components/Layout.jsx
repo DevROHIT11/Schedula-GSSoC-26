@@ -72,7 +72,7 @@ function NotificationsBell() {
     if (!user) return;
     try {
       const d = await api.get('/notifications');
-      items(d.notifications || []);
+      setItems(d.notifications || []);
       setUnread(d.unread_count || 0);
     } catch { /* empty */ }
   };
@@ -209,7 +209,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen bg-ink-50 relative">
-      {/* Desktop sidebar */}
+      
       <aside
         className="hidden lg:flex lg:flex-col
                    fixed left-0 top-0 h-screen z-40
@@ -256,7 +256,6 @@ export default function Layout({ children }) {
         )}
       </aside>
 
-      {/* Reserved gutter so main content sits to the right of the sidebar */}
       <div className="flex lg:pl-[260px]">
 
         {/* Mobile drawer */}
@@ -313,7 +312,7 @@ export default function Layout({ children }) {
           </main>
         </div>
 
-      </div>{/* end of pl-[260px] gutter wrapper */}
+      </div>
 
       {/* === SCROLL UI BUTTONS === */}
       {showScrollTop && (
