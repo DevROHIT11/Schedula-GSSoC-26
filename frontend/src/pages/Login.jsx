@@ -46,9 +46,9 @@ export default function Login() {
           {busy ? <Loader2 size={16} className="animate-spin" /> : null}
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
-        <div className="text-center text-xs text-ink-500 pt-2">
-          Demo: <span className="font-mono">customer@app.com</span> / <span className="font-mono">password123</span>
-        </div>
+        <p className="text-center text-xs text-ink-600 select-text cursor-text pt-2">
+          Demo: <span className="font-mono bg-ink-100 px-1.5 py-0.5 rounded border border-ink-200">customer@app.com</span> / <span className="font-mono bg-ink-100 px-1.5 py-0.5 rounded border border-ink-200">password123</span>
+        </p>
       </form>
     </AuthShell>
   );
