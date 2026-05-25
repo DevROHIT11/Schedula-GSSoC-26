@@ -12,6 +12,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
   dateStrings: true,
   multipleStatements: false,
+  ssl: false
 });
 
 module.exports = pool;

@@ -8,16 +8,14 @@ const bcrypt = require('bcryptjs');
 (async () => {
   const dbName = process.env.DB_NAME || 'appointment_app';
 
-  const conn = await mysql.createConnection({
+  // First, connect without specifying a database to check/create it
+  let conn = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: dbName,
     multipleStatements: true,
-    ssl: {
-      rejectUnauthorized: false
-    }
+    ssl: false
   });
 
   const rawSchema = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'schema.sql'), 'utf8');
@@ -35,6 +33,26 @@ const bcrypt = require('bcryptjs');
 
   const schema = adapt(rawSchema);
   const seed   = adapt(rawSeed);
+
+  // Create database if it doesn't exist (for local dev)
+  try {
+    console.log(`Creating database \`${dbName}\` if it doesn't exist...`);
+    await conn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+    await conn.end();
+    
+    // Now reconnect with the database specified
+    conn = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT) || 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: dbName,
+      multipleStatements: true,
+      ssl: false
+    });
+  } catch (err) {
+    console.log('Note: Database creation skipped (managed database detected)');
+  }
 
   // Managed DBs strip the schema's DROP DATABASE, so we have to clear tables
   // ourselves to keep db:init idempotent. Disable FK checks while dropping.
