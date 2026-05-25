@@ -15,7 +15,7 @@ export const CATEGORIES = [
     gradient: 'from-rose-500 via-rose-600 to-rose-700',
     softBg:   'bg-rose-50',
     chipBg:   'bg-rose-100 text-rose-700',
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80&auto=format&fit=crop',
+    image: '/a1.png',
   },
   {
     id: 'fitness',
@@ -29,7 +29,7 @@ export const CATEGORIES = [
     gradient: 'from-emerald-500 via-emerald-600 to-emerald-700',
     softBg:   'bg-emerald-50',
     chipBg:   'bg-emerald-100 text-emerald-700',
-    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80&auto=format&fit=crop',
+    image: '/a2.png',
   },
   {
     id: 'professional',
@@ -38,12 +38,12 @@ export const CATEGORIES = [
     route: '/services/professional',
     apiCategory: 'services',
     iconKey: 'wrench',
-    animation: 'wrench',
+    animation: 'bounce',
     accent: '#0ea5e9',
     gradient: 'from-sky-500 via-sky-600 to-sky-700',
     softBg:   'bg-sky-50',
     chipBg:   'bg-sky-100 text-sky-700',
-    image: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=900&q=80&auto=format&fit=crop',
+    image: '/a3.png',
   },
   {
     id: 'corporate',
@@ -57,7 +57,7 @@ export const CATEGORIES = [
     gradient: 'from-blue-500 via-blue-600 to-blue-700',
     softBg:   'bg-blue-50',
     chipBg:   'bg-blue-100 text-blue-700',
-    image: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=900&q=80&auto=format&fit=crop',
+    image: '/a4.png',
   },
   {
     id: 'virtual',
@@ -71,7 +71,7 @@ export const CATEGORIES = [
     gradient: 'from-violet-500 via-violet-600 to-violet-700',
     softBg:   'bg-violet-50',
     chipBg:   'bg-violet-100 text-violet-700',
-    image: 'https://images.unsplash.com/photo-1610484826917-0f101a7c6c93?w=900&q=80&auto=format&fit=crop',
+    image: '/a5.png',
   },
   {
     id: 'others',
@@ -85,7 +85,7 @@ export const CATEGORIES = [
     gradient: 'from-amber-500 via-amber-600 to-amber-700',
     softBg:   'bg-amber-50',
     chipBg:   'bg-amber-100 text-amber-700',
-    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&q=80&auto=format&fit=crop',
+    image: '/a6.png',
   },
 ];
 

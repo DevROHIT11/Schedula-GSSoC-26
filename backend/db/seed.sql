@@ -70,7 +70,7 @@ INSERT INTO services
   is_published,share_token,rating,rating_count)
 VALUES
  (2,1,'Dental Care','Professional dental cleaning, check-ups, and consultations performed by certified specialists in a calm, modern environment.',
-  'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=900&q=80&auto=format&fit=crop',
+  '/b1.png',
   30,5,'Doctor''s Office, 64 Doctor Street, Pune 411001',
   'in_person','none',NULL,
   'India','Maharashtra','Pune','Pune',
@@ -80,7 +80,7 @@ VALUES
   1,'tok_dental_001',4.9,127),
 
  (2,2,'Group Yoga Class','Morning yoga session for groups — focus on flexibility, breath, and balance.',
-  'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=900&q=80&auto=format&fit=crop',
+  '/b2.png',
   60,0,'Yoga Studio, MG Road, Pune',
   'in_person','none',NULL,
   'India','Maharashtra','Pune','Pune',
@@ -90,7 +90,7 @@ VALUES
   1,'tok_yoga_002',4.8,84),
 
  (4,3,'Therapy Session','One-on-one counseling for stress, anxiety, and life transitions in a safe, private space.',
-  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900&q=80&auto=format&fit=crop',
+  '/b3.png',
   45,15,'Online — Google Meet',
   'virtual','google_meet','https://meet.jit.si/SchedulaBkg-3-therapy',
   'India','Karnataka','Bengaluru','Bengaluru',
@@ -100,7 +100,7 @@ VALUES
   1,'tok_therapy_003',4.95,212),
 
  (4,5,'Mock Interview - Software','60-minute mock interview with structured feedback for software engineering roles.',
-  'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=900&q=80&auto=format&fit=crop',
+  '/b4.png',
   60,10,'Online — Zoom',
   'virtual','zoom','https://meet.jit.si/SchedulaBkg-4-mock',
   'India','Karnataka','Bengaluru','Bengaluru',
@@ -110,7 +110,7 @@ VALUES
   1,'tok_mock_004',4.9,156),
 
  (5,2,'Personal Training','Personalised one-on-one fitness sessions tailored to your goals — strength, endurance, mobility.',
-  'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80&auto=format&fit=crop',
+  '/b5.png',
   60,15,'FitClub, Linking Road, Mumbai',
   'in_person','none',NULL,
   'India','Maharashtra','Mumbai','Mumbai',
@@ -120,7 +120,7 @@ VALUES
   1,'tok_fitness_005',4.85,98),
 
  (5,4,'Photo Studio Session','Professional studio photography — portraits, products, and creative shoots with edited deliverables.',
-  'https://images.unsplash.com/photo-1470114716159-e389f8712fda?w=900&q=80&auto=format&fit=crop',
+  '/b6.png',
   90,30,'Studio 7, Bandra West, Mumbai',
   'in_person','none',NULL,
   'India','Maharashtra','Mumbai','Mumbai',
@@ -130,7 +130,7 @@ VALUES
   1,'tok_studio_006',4.7,42),
 
  (2,6,'Hair & Beauty','Modern salon services — precision cuts, colour, and styling by experienced stylists.',
-  'https://images.unsplash.com/photo-1562280963-8a5475740a10?w=900&q=80&auto=format&fit=crop',
+  '/b7.png',
   45,5,'Glow Salon, FC Road, Pune',
   'in_person','none',NULL,
   'India','Maharashtra','Pune','Pune',
@@ -140,7 +140,7 @@ VALUES
   1,'tok_salon_007',4.6,63),
 
  (5,2,'CrossFit Bootcamp','High-intensity 45-minute group bootcamp — strength, conditioning and cardio in one tight session.',
-  'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=900&q=80&auto=format&fit=crop',
+  '/b8.png',
   45,15,'IronFit Gym, Bandra, Mumbai',
   'in_person','none',NULL,
   'India','Maharashtra','Mumbai','Mumbai',
@@ -150,7 +150,7 @@ VALUES
   1,'tok_crossfit_008',4.8,212),
 
  (4,3,'Career Coaching','Strategic career coaching — career mapping, transitions, and leadership development.',
-  'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=900&q=80&auto=format&fit=crop',
+  '/b9.png',
   60,15,'Online — Google Meet',
   'virtual','google_meet',NULL,
   'India','Karnataka','Bengaluru','Bengaluru',
@@ -160,7 +160,7 @@ VALUES
   1,'tok_career_009',4.9,73),
 
  (5,1,'Home Lab Tests','Certified phlebotomist visits your home for blood draw and lab tests with same-day digital reports.',
-  'https://images.unsplash.com/photo-1579154204601-01588f351e67?w=900&q=80&auto=format&fit=crop',
+  '/b10.png',
   30,15,'Home visit (within Mumbai)',
   'in_person','none',NULL,
   'India','Maharashtra','Mumbai','Mumbai',
@@ -170,7 +170,7 @@ VALUES
   1,'tok_homelab_010',4.7,341),
 
  (2,6,'AC / Appliance Repair','Trained technicians for AC, washing machine, fridge & microwave service & repair at your doorstep.',
-  'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=900&q=80&auto=format&fit=crop',
+  '/a3.png',
   60,30,'On-site, Pune & Pimpri-Chinchwad',
   'in_person','none',NULL,
   'India','Maharashtra','Pune','Pune',
@@ -180,7 +180,7 @@ VALUES
   1,'tok_repair_011',4.5,512),
 
  (4,5,'Mock Interview - Product','45-minute case-based interview prep for PM roles with structured rubric and written feedback.',
-  'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=900&q=80&auto=format&fit=crop',
+  '/b11.png',
   45,15,'Online — Zoom',
   'virtual','zoom',NULL,
   'India','Karnataka','Bengaluru','Bengaluru',
@@ -192,7 +192,7 @@ VALUES
  -- Unique services for the new "Virtual" category. These do NOT exist
  -- in any other category — they're online-only platforms.
  (4,7,'Online Consultation','30-minute one-on-one online consultation with vetted experts across domains.',
-  'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=900&q=80&auto=format&fit=crop',
+  '/b12.png',
   30,5,'Online — Google Meet',
   'virtual','google_meet',NULL,
   'India',NULL,NULL,NULL,
@@ -202,7 +202,7 @@ VALUES
   1,'tok_oconsult_013',4.8,154),
 
  (4,7,'Remote IT Support','Live screen-share troubleshooting for laptops, networks and SaaS apps. 1-hour session.',
-  'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=900&q=80&auto=format&fit=crop',
+  '/b13.png',
   60,10,'Online — Zoom',
   'virtual','zoom',NULL,
   'India',NULL,NULL,NULL,
@@ -212,7 +212,7 @@ VALUES
   1,'tok_remoteit_014',4.85,89),
 
  (5,7,'Virtual Classroom','Live group class for skills, languages or hobbies — up to 20 attendees per slot.',
-  'https://images.unsplash.com/photo-1610484826917-0f101a7c6c93?w=900&q=80&auto=format&fit=crop',
+  '/b14.png',
   60,0,'Online — Google Meet',
   'virtual','google_meet',NULL,
   'India',NULL,NULL,NULL,
