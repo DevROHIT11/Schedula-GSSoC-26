@@ -1,5 +1,14 @@
 # Schedula
 
+<p align="left">
+  <a href="https://coderabbit.ai">
+    <img 
+      src="https://img.shields.io/coderabbit/prs/github/DevROHIT11/Schedula-GSSoC-26?utm_source=oss&utm_medium=github&utm_campaign=OWNER%2FREPO&labelColor=282a36&color=ff8c00&logo=github&label=CodeRabbit+Reviews"
+      alt="CodeRabbit Pull Request Reviews"
+    />
+  </a>
+</p>
+
 **Booking a service shouldn't take five emails and a phone call.**
 
 Schedula is a simple appointment booking app built for the **Odoo x VIT Hackathon 2026**. You can use it to find a service, see open time slots, and book in under a minute. It works for doctors, gyms, therapy, events, mock interviews, and online sessions — all in one app.
@@ -238,4 +247,4 @@ CONTRIBUTING.md — Contribution workflow, pull request guidelines, and programm
 
 CODE_OF_CONDUCT.md — Expected community engagement and behavioral parameters.
 
-Built with dedication for the Odoo x VIT Hackathon 2026 ✨
+
