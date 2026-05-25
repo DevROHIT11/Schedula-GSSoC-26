@@ -1,14 +1,25 @@
-import { useEffect, useState } from 'react';
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Compass, User, Briefcase, Shield,
-  Bell, LogOut, Menu, X, Sparkles, Coins, Bookmark, Video,
+    Bell,
+    Bookmark,
+    Briefcase,
+    Coins,
+    Compass,
+    LogOut, Menu,
+    Moon,
+    Shield,
+    Sparkles,
+    Sun,
+    User,
+    Video,
+    X,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext.jsx';
 import ChatbotWidget from './ChatbotWidget.jsx';
-import SearchAutocomplete from './SearchAutocomplete.jsx';
 import MobileBottomNav from './MobileBottomNav.jsx';
+import SearchAutocomplete from './SearchAutocomplete.jsx';
 import UpcomingMeetingBanner from './UpcomingMeetingBanner.jsx';
 
 function NavItem({ to, icon: Icon, label, end }) {
@@ -151,6 +162,19 @@ export default function Layout({ children }) {
   const nav = useNavigate();
   const loc = useLocation();
   const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light';
+    const saved = window.localStorage.getItem('theme');
+    return saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    window.localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((value) => (value === 'dark' ? 'light' : 'dark'));
+
   const initials = user
     ? (user.full_name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
     : '';
@@ -257,6 +281,14 @@ export default function Layout({ children }) {
             <div className="flex items-center gap-3 ml-auto">
               <PlanCreditsBadge />
               <NotificationsBell />
+              <button
+                onClick={toggleTheme}
+                className="btn-ghost !p-2.5 !rounded-full"
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               {!user && (
                 <>
                   <Link to="/login" className="btn-ghost">Sign in</Link>
