@@ -15,330 +15,236 @@ Schedula is a simple appointment booking app built for the **Odoo x VIT Hackatho
 
 It's not just a calendar with a pay button. Customers, organisers, and admins each get their own pages. Bookings are safe even when many people book at the same time. Payments are checked on the server. Discounts, credits, and plans all add up correctly to the final price.
 
-<p align="center">
-  <img src="./assets/Homepage.png"  />
-</p>
 
 ---
 
-## Watch it before you read it
+## 📺 Watch it before you read it
 
 Two short videos. These are the fastest way to see what we built.
 
-> ### 📺 Demo / solution walkthrough
-> **<https://drive.google.com/file/d/1t904ag11pgaV6CiDPxbMl0djOYP5WqXm/view?usp=drive_link>**
->
+> ### Demo / Solution Walkthrough
+> **[Watch Video](https://drive.google.com/file/d/1t904ag11pgaV6CiDPxbMl0djOYP5WqXm/view?usp=drive_link)**
+> 
 > A quick walk through the booking flow: pick a service, pick a slot, pay, confirm, and review.
 
-> ### 📺 Schedula platform walkthrough
-> **<https://drive.google.com/file/d/16iv33VRchUstvMA7w2nEdvjQM2TFTmdE/view?usp=sharing>**
->
+> ### Schedula Platform Walkthrough
+> **[Watch Video](https://drive.google.com/file/d/16iv33VRchUstvMA7w2nEdvjQM2TFTmdE/view?usp=sharing)**
+> 
 > The full app tour — customer dashboard, organiser side, admin dashboard, feedback page, and the plan system.
 
 ---
 
-## Why we built it this way
+## 🎯 Why we built it this way
 
 Most booking apps we tried as students did one of two things badly:
-
-1. **They lied about open slots.** Slots looked free, then someone had to "confirm" them by email later.
-2. **They hid the cost.** Fees showed up only after you typed your phone number. Rescheduling needed a phone call.
+1. **They lied about open slots:** Slots looked free, then someone had to "confirm" them by email later.
+2. **They hid the cost:** Fees showed up only after you typed your phone number. Rescheduling needed a phone call.
 
 So we set three simple rules for Schedula:
-
-- **What you see is what you can book.** The grid only shows slots you can actually take. Booked slots are hidden, not greyed out. Colours are honest: 🟢 free, ⚫ picked, 🟡 only for premium plans.
-- **The price is honest from the start.** Subtotal, tax, discount, credits, and total are all visible at the Details step. No surprises later.
-- **You can change your mind.** Cancel a booking and credits come back. Reschedule and the new slot is checked again. You can edit your profile, photo, and reviews any time.
+*   **What you see is what you can book:** The grid only shows slots you can actually take. Booked slots are hidden, not greyed out. Colours are honest: 🟢 free, ⚫ picked, 🟡 only for premium plans.
+*   **The price is honest from the start:** Subtotal, tax, discount, credits, and total are all visible at the Details step. No surprises later.
+*   **You can change your mind:** Cancel a booking and credits come back. Reschedule and the new slot is checked again. You can edit your profile, photo, and reviews any time.
 
 ---
 
-## What's inside
+## 📦 What's inside
 
 ### Three types of users
 
 | User | What they do |
-|---|---|
+| :--- | :--- |
 | **Customer** | Find services, book in 7 steps, pay, reschedule, cancel, leave reviews, manage credits and plan, save favourites |
 | **Organiser** | Add services, set weekly hours or flexible windows, set capacity and rules, see their booking calendar, manage video meeting links |
 | **Admin** | See platform stats (14-day trends, peak hours, top categories, top providers), manage users, read all customer feedback |
 
 ### The booking flow
+text
+Service  ➔  Provider  ➔  Date  ➔  Slot  ➔  Details  ➔  Payment  ➔  Confirmation
+---
+---
+Slot Resolution: Slots come from a weekly schedule (the same hours every week) or flexible windows (specific dates) — never both at once.
 
-```
-Service → Provider → Date → Slot → Details → Payment → Confirmation
-```
+Constraints: Slots respect buffer times, group capacity, blocked dates, and the user's tier constraints (Silver: book within 14 days, Gold: 30 days, Platinum: any time).
 
-- Slots come from a weekly schedule (the same hours every week) or flexible windows (specific dates) — never both at once
-- Slots respect the buffer time, group capacity, blocked dates, and the user's plan (Silver: book within 14 days, Gold: 30 days, Platinum: any time)
-- When you book, the database locks the slot row so two people can't grab the same time at the same moment
-- Reschedules use the same lock. Cancellation puts your credits back automatically.
+Concurrency Controls: When you book, the database locks the slot row natively so two people cannot grab the same time at the same moment.
 
-### Pricing (every part is clear)
+State Management: Reschedules use the same lock. Cancellations revert credits automatically.
+---
 
-- **Discount codes** — percent off or flat amount. Can have a minimum order, an expiry date, and a usage limit.
-- **GST** — only added when the subtotal goes above a set amount for the service
-- **Schedula credits** — 1 credit = ₹1. You earn 5% on every paid booking (2x if you're Gold, 5x if Platinum). You can use credits for up to half the order. They expire after 90 days.
-- **Plans** — Silver (free), Gold (₹299/month), Platinum (₹799/month). Plans give priority slots, a longer booking window, free reschedules, and bigger credit rewards.
+## Feature Deep Dive
 
-The math is fixed: `subtotal − discount + tax − credits = total`. Same every time.
+⚡ 1. Real-Time Interactions (Socket.io)
+Live Booking Ticker for Organisers: Organisers receive instant pop-up alerts and sound notifications the millisecond a slot is booked, eliminating the need for page reloads.
 
-### Payments
+In-App Chat Engine: Secure, real-time 1-on-1 chat routing between customers and organisers to discuss booking specifics pre- or post-appointment.
+---
 
-- Out of the box, the app runs in **demo mode**. The full flow works, but no real money moves. The screen shows a yellow "Demo" pill.
-- To go live, just put `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `backend/.env` and restart. The same flow now uses real Razorpay checkout (Card, UPI, Net Banking, Wallets).
-- The server checks every payment with a secure signature. A booking is **never** marked paid unless this check passes. Full setup steps are in [`RAZORPAY_SETUP.md`](./RAZORPAY_SETUP.md).
-- A UPI QR option is always there too — scan with any UPI app and the booking gets confirmed.
+🛠️ 2. Automated Communication Pipeline
+Multi-Channel Messaging Alerts: Integrates with Twilio and Indian communication gateways (Kaleyra/Exotel) to pipe production-grade booking slips, updates, and links directly via WhatsApp & SMS.
 
-### Feedback you can actually see
+Calendar Synchronization: One-click native ecosystem alignment using ical-generator and Google Calendar API integrations directly from the booking confirmation shell.
+---
 
-When you submit a review:
+📊 3. Advanced Analytics & Dynamic Pricing
+Availability Heatmap: A visual matrix layout that processes platform data to expose peak usage frequencies, allowing organisers to pinpoint their busiest windows at a glance.
 
-- It shows up in **your profile** under "My feedback". You can sort by latest or highest rating, and click through to the service or booking.
-- It shows up in the **admin feedback page** — every review on the platform, with stars, customer name, comment, and the booking it came from. Admins can sort it too.
-- It updates the **service's average star rating** right away.
+Demand-Based Dynamic Pricing: Integrated surge pricing algorithms that automatically recalibrate active base rates during high-traffic intervals (e.g., weekend evenings).
 
-The review form lives on the booking confirmation page. Once your booking is marked completed, a "Leave review" button appears.
+🧠 4. Smart AI Capabilities
+AI-Powered Slot Finder: Deep natural language parser processing statements like "Book me an interview with Dr. Watson tomorrow evening" to autonomously query available backend slots and deliver actionable reservation elements.
 
-### Profiles you can edit
+Predictive Recommendations: ML-driven matching nodes that trace user booking histories and regional demands to present customized service recommendation carousels.
+---
 
-- Edit your name, phone (with OTP check), and photo
-- **Profile photo upload** — click your avatar, pick an image (under 4 MB, common image formats). The image is saved in the database, so no extra file storage is needed.
-- Sections for upcoming bookings, past bookings, your feedback, and credits balance — all update live
+🌍 5. Localization & Accessibility (UI/UX)
+Voice-Based Conversational Search: In-app voice recognition framework mapping user speech inputs (e.g., "Dentist near me") directly to active multi-tier metadata filters.
 
-### Service catalogue
+Zero-Dependency Multi-lingual Context: Localized state hooks driving dynamic Marathi, Hindi, and English variants on-the-fly without pulling heavy package payloads.
 
-- Six categories: Healthcare, Sports, Counseling, Events, Interviews, Services
-- Filter by category, search text, country / state / city, type (in-person or online), and max price
-- "Near me" uses your location to pick the closest city
-- Personal recommendations — top-rated near your city, or top-rated overall
+Dynamic Dark Mode: Fluid interface skin adaptation using Tailwind CSS media tokens to enhance visual comfort and platform accessibility.
+---
 
-### Appointment types
-
-- **In-person** — has a venue and city
-- **Online** — gets its own meeting link (Jitsi by default; works with the organiser's Meet/Zoom link too). The "Join meeting" button turns on 5 minutes before the start time.
-
-### Sign-in (safe by default)
-
-- Email + password with a 6-digit code sent by email
-- Phone OTP for SMS reminders (logged on the server in demo mode)
-- "Forgot password" reset via a one-time email link
-- Forgot-password and similar pages always say the same thing, so no one can guess if an email exists
-- JWT for sessions, bcrypt for passwords
-
-### UI (recently redesigned)
-
-- Clean modern look — Plus Jakarta Sans for headings, Fraunces italic for accents, Inter for the body
-- Warm cream background, refined indigo brand colour, warm coral for highlights, sage green for success
-- Cards with image on top and white panel below — inspired by Mobbin. Booking flow polish — inspired by SimplyBook.
-- Smooth page transitions, scrolling carousel for recommended services, animated FAQ
-- Admin dashboard with simple charts (area, bar, pie)
-- Three languages — English, Hindi, Marathi
-- AI chat bubble on every signed-in page
-- Mobile bottom navigation, sidebar, blurred top bar
-
-### Notifications
-
-- Bell icon with unread count, refreshed every 30 seconds, dismissable
-- Email when a booking is created, rescheduled, cancelled, or paid
-
-### Locations
-
-- Full Country → State → District → City data for India
-- "Nearest city" lookup using your latitude and longitude
+🔒 6. Enterprise Multi-Tenant Staff Management
+Sub-Resource Assignment: Organisers can create sub-merchant structures to map internal staff assets (e.g., specific gym trainers, medical practitioners, or consultants) to distinct independent operational calendars.
 
 ---
 
-## Tech used
 
-**Frontend**
-React 18, Vite, React Router, Tailwind CSS, Framer Motion, Recharts, Lucide icons
+🛠️ Tech Used
+Frontend
 
-**Backend**
-Node.js, Express, MySQL 8, mysql2, bcryptjs, jsonwebtoken, multer, nodemailer, razorpay
+React 18, Vite, React Router
 
-**Database**
-MySQL 8 with foreign keys, named indexes, and a migrations folder
+Tailwind CSS, Framer Motion
+
+Recharts, Lucide Icons
+
+Socket.io-client
+
+Backend
+
+Node.js, Express
+
+MySQL 8, mysql2 driver
+
+Socket.io (WebSocket framework)
+
+bcryptjs, jsonwebtoken
+
+Multer, Nodemailer, Razorpay SDK
+
+Database
+
+Relational schema built using MySQL 8 with hard foreign key constraints, explicit execution indexing, and an execution-ready migration runner.
+---
+
+
+🚀 Setup
+You will need Node 18+, MySQL 8 running locally, and a terminal environment.
+
+1. Database Provisioning
+Configure your local MySQL instance (Default user: root, no password). The automated initializer will provision the appointment_app cluster and inject seeding mocks.
+
+2. Backend Initialization
+
+       cd backend
+       cp .env.example .env       # Tweak custom DB ports/credentials here
+       npm install
+       npm run db:init            # Executes full schema.sql + seed.sql configuration
+       npm run dev                # Running on http://localhost:4000
+
+Note: To apply a manual atomic delta update to an existing cluster without full re-seeding:
+
+     mysql appointment_app < db/migrations/001_add_avatar_url.sql
+
+
+
+3. Frontend Execution
+
+        cd frontend
+        npm install
+        npm run dev                # Running on http://localhost:5173
+
+
+Proxy details: Vite is pre-configured to forward all /api/* context traffic directly to upstream port 4000. No manual CORS setup required.
+
+
+## 🔑 Test Accounts & Demo Profiles
+
+     Platform ke roles, capabilities aur workflows ko check karne ke liye is master credential table ka use karein. Sabhi seed environments aur test containers mein default security layer        embedded hai.
+
+### Master Authentication Key
+> ⚠️ **Development Warning**: Sabhi predefined seed accounts aur test profiles ka access password neeche diya gaya hai:
+> * **Master Password**: `password123`
+
+### Profile Matrix & Roles
+
+
+| Email Address | System Role | Contextual Profile Setup & Scope |
+| :--- | :--- | :--- |
+| `admin@app.com` | **Admin** | Full platform observation rights, global logs access, metrics view. |
+| `organiser@app.com` | **Organiser** | Contextual ownership of **Dental Clinics**, **Yoga Studios**, **Hair & Beauty**. |
+| `watson@app.com` | **Organiser** | Contextual ownership of **Therapy Practices**, **Mock Interviews**. |
+| `maria@app.com` | **Organiser** | Contextual ownership of **Personal Training**, **Photo Studios**. |
+| `customer@app.com` | **Customer** | Premium user; **Gold-tier** subscription profile with **700 accumulated credits**. |
+| `akash@app.com` | **Customer** | Standard user; **Base-tier** profile with **100 credits** and no active plan. |
 
 ---
 
-## Setup
+## ⚡ Quick Testing Guide
 
-You'll need: **Node 18+**, **MySQL 8** running on your machine, and a terminal.
+1. **Multi-Tenant Staff Access Isolation**: 
+   * `organiser@app.com` se login karke ek dynamic yoga slot create karein.
+   * `customer@app.com` profile se use book karein aur check karein ki socket ticker trigger hota hai ya nahi.
+2. **Surge Pricing Verification**:
+   * Peak hour durations (jaise kal shaam ka slot) par booking check karein.
+   * System backend `customer@app.com` aur `akash@app.com` ke active credit values ke mutabik dynamic balances modify karega.
 
-### 1. MySQL
 
-Install MySQL 8 (default user: `root`, no password). The setup script will create the `appointment_app` database and add demo data.
+🧭 Main API Routes  Authentication (/api/auth) POST /register | POST /verify-otp | POST /resend-otp | POST /login
 
-### 2. Backend
+    POST /forgot | POST /reset | GET /me | PUT /me (profile adjustments)
 
-```bash
-cd backend
-cp .env.example .env       # change DB details if needed
-npm install
-npm run db:init            # runs schema.sql + seed.sql
-npm run dev                # http://localhost:4000
-```
+    POST /phone/send-otp | POST /phone/verify-otp
 
-If your DB already exists and you just want to apply the latest change (the `avatar_url` column we added):
+   Services Engine (/api/services)
+   GET / (filtered pagination searches) | GET /search | GET /recommended
 
-```bash
-mysql appointment_app < db/migrations/001_add_avatar_url.sql
-```
+      GET /reviews/mine?sort=latest|highest (historical review trace updates)
 
-### 3. Frontend
+      GET /:id | GET /:id/slots?date=&resource_id= | GET /share/:token | POST /:id/review
 
-```bash
-cd frontend
-npm install
-npm run dev                # http://localhost:5173
-```
+      Organiser Endpoints: GET /mine/list | POST / | PUT /:id | DELETE /:id | PUT /:id/publish | POST /:id/resources | PUT /:id/weekly | PUT /:id/flexible | GET /:id/calendar
 
-The frontend sends `/api/*` calls to the backend at port 4000. No CORS setup needed.
+  Booking Lifecycle (/api/bookings)
+       GET /mine | GET /:id | POST / (handles real-time credit matching, promo verification)
 
-### Demo accounts
+        POST /:id/reschedule | POST /:id/cancel | POST /:id/confirm
 
-Password for all of them: `password123`.
+ Financials & System Management (/api/payment & /api/admin)
+      POST /create-order | POST /verify | POST /upi-confirm
 
-| Email | Role | Notes |
-|---|---|---|
-| `admin@app.com` | admin | full access |
-| `organiser@app.com` | organiser | owns Dental, Yoga, Hair & Beauty |
-| `watson@app.com` | organiser | owns Therapy, Mock Interview |
-| `maria@app.com` | organiser | owns Personal Training, Photo Studio |
-| `customer@app.com` | customer | Gold plan, 700 credits |
-| `akash@app.com` | customer | 100 credits, no plan |
+      GET /api/subscriptions/plans | POST /api/discounts/validate
+
+      GET /api/admin/dashboard (Aggregated 14-day trends, peak heatmaps, provider distribution matrices)
+
 
 ---
 
+🔥 Key Engineering Highlights
+    Race-Condition Immunity: Slot reservations utilize explicit transactional row locking (FOR UPDATE mechanics under the hood). If two distinct consumers make concurrent hits on the exact     same micro-slot timeline, the engine forces serial evaluation—eliminating accidental double-booking states.
+
+  Cryptographic Settlement Audits: Financial integrity doesn't break down in demo or live variants. Payments rely on strict state checks verified using server-evaluated hash matching via      HMAC SHA256 signatures before confirming downstream booking logs.
+
+  Bi-Directional WebSocket Pipeline: Leverages an active Socket.io architecture to maintain low-latency connections, powering the real-time chat grid and immediate admin/organiser ticker   distribution without REST polling overhead.
+  
 ---
 
-## Contribution & Community Guidelines
+🤝 Contribution & Community Guidelines
+Before contributing to the project, please ensure you review:
 
-Before contributing to the project, please make sure to read:
+CONTRIBUTING.md — Contribution workflow, pull request guidelines, and programming code conventions.
 
-- [CONTRIBUTING.md](./CONTRIBUTING.md) — Contribution workflow, issue rules, PR guidelines, coding standards, and contributor instructions.
-- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) — Community guidelines and expected behavior for all participants and contributors.
-
-Following these guidelines helps maintain a healthy, organized, and beginner-friendly open-source environment.
-
----
-
-## Folder structure
-
-```
-backend/
-  db/
-    schema.sql              # full database schema
-    seed.sql                # demo data
-    migrations/
-      001_add_avatar_url.sql
-  scripts/
-    seedLarge.js            # adds 200+ services for testing
-    trimServices.js
-    fixMeetingLinks.js
-  src/
-    config/db.js
-    controllers/            # auth, services, bookings, payment, admin,
-                            # categories, locations, subscriptions, credits,
-                            # discounts, notifications, chat, upload, saved
-    services/               # slot logic, booking logic, reminders, mailer
-    middlewares/            # auth, error handling, file upload
-    routes/                 # one file per resource
-    utils/
-    server.js
-
-frontend/
-  src/
-    api/client.js           # small fetch wrapper
-    components/             # Layout, Calendar, ServiceCard, ChatbotWidget,
-                            # AuthShell, ImageUploader, SearchAutocomplete,
-                            # MobileBottomNav, FaqSection, Toast, Field, etc.
-    context/AuthContext.jsx
-    data/categories.js
-    pages/                  # Login, Register, Dashboard, BookingFlow, Payment,
-                            # Profile, Plans, Saved, Admin, Organiser, etc.
-    styles/category.css
-    utils/                  # format, validators, razorpay helper
-    styles.css              # Tailwind base + design tokens
-    App.jsx, main.jsx
-  tailwind.config.js
-  postcss.config.js
-  index.html
-```
-
----
-
-## Main API routes
-
-### Auth (`/api/auth`)
-`POST /register`, `POST /verify-otp`, `POST /resend-otp`, `POST /login`
-`POST /forgot`, `POST /reset`, `GET /me`, `PUT /me` (now accepts `avatar_url`)
-`POST /phone/send-otp`, `POST /phone/verify-otp`
-
-### Services (`/api/services`)
-`GET /` (with filters), `GET /search`, `GET /recommended`
-`GET /reviews/mine?sort=latest|highest` *(new — your own reviews)*
-`GET /:id`, `GET /:id/slots?date=&resource_id=`, `GET /share/:token`, `POST /:id/review`
-
-**For organisers:** `GET /mine/list`, `POST /`, `PUT /:id`, `DELETE /:id`, `PUT /:id/publish`,
-`POST /:id/resources`, `DELETE /:id/resources/:rid`, `PUT /:id/weekly`, `PUT /:id/flexible`,
-`PUT /:id/questions`, `PUT /:id/calendar-notes`, `GET /:id/calendar`, `GET /:id/bookings`
-
-### Bookings (`/api/bookings`)
-`GET /mine`, `GET /:id`, `POST /` (with discount, credits, purpose),
-`POST /:id/reschedule`, `POST /:id/cancel`, `POST /:id/confirm` (organiser)
-
-### Payment (`/api/payment`)
-`GET /config`, `POST /create-order`, `POST /verify`, `POST /fail`, `POST /upi-confirm`
-
-### Plans / Credits / Discounts
-`GET /api/subscriptions/plans`, `GET /api/subscriptions/mine`,
-`POST /api/subscriptions/subscribe`, `POST /api/subscriptions/cancel`
-`GET /api/credits/me`, `POST /api/credits/grant` (admin)
-`GET /api/discounts`, `POST /api/discounts/validate`
-
-### Categories / Locations / Saved
-`GET /api/categories`
-`GET /api/locations`, `GET /api/locations/search?q=`, `GET /api/locations/nearest?lat=&lng=`
-`GET /api/saved`, `GET /api/saved/ids`, `POST /api/saved/:serviceId`, `DELETE /api/saved/:serviceId`
-
-### Notifications / Chat / Uploads
-`GET /api/notifications`, `PUT /api/notifications/:id/read`, `PUT /api/notifications/read-all`,
-`DELETE /api/notifications`, `DELETE /api/notifications/:id`
-`GET /api/chat/history`, `POST /api/chat/send`
-`POST /api/uploads` (image, ≤ 4 MB), `GET /uploads/:filename`
-
-### Admin (`/api/admin`)
-`GET /dashboard` (stats, 14-day trend, peak hours, category pie, top providers)
-`GET /users`, `PUT /users/:id/active`, `PUT /users/:id/role`
-`GET /reviews?sort=latest|highest&service_id=&limit=` *(new — full feedback feed)*
-`GET /reports`
-
----
-
-## Things we're proud of
-
-- **No double-bookings.** Every booking happens inside a database lock. Two people tapping the same slot at the same moment will see one win and one error — never two confirmed bookings for the same time.
-- **Honest slot grid.** A slot shows up only if you can book it now, or unlock it with a plan upgrade. Booked, blocked, or out-of-window slots are hidden — not greyed out. The colour legend is right there in the UI.
-- **Safe payments.** Even in demo mode, the steps are the same as live (`create-order → checkout → verify`). The signature check is the only way a booking gets marked paid. Cancelled payments call `payment/fail` so we don't leave junk rows behind.
-- **Feedback that actually shows up.** A review you leave on the confirmation page appears in your profile, in the admin feedback page, and updates the service's stars — all in real time.
-- **Three languages, no extra library.** English, Hindi, and Marathi switch from one place. We wrote a small `useTranslation()` hook instead of pulling in a big i18n package.
-- **Design system that pays off.** Custom Tailwind tokens (`ink`, `brand`, `accent`, `sage`), reusable classes (`.card`, `.btn-primary`, `.eyebrow`, `.section-title`), Plus Jakarta + Fraunces fonts. Every page uses the same set of building blocks, so nothing feels random.
-
----
-
-## What we'd add next
-
-- A real reminder pipeline (right now SMS is logged, not sent)
-- Calendar export — push bookings to Google Calendar / Apple Calendar
-- One-to-one messaging between customer and organiser
-- Heatmap of availability on the organiser dashboard
-- A second tax mode (per-line item) for services that mix taxable and non-taxable parts
-
----
-
-## Built with care for the Odoo x VIT Hackathon 2026
-
-Made by a team that got tired of phone-confirming dentist appointments. If you find a bug, treat it as feedback — open the chat, leave a review, or send a fix.
+CODE_OF_CONDUCT.md — Expected community engagement and behavioral parameters.
 
 
