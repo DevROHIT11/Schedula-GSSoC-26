@@ -10,6 +10,7 @@ import ChatbotWidget from './ChatbotWidget.jsx';
 import SearchAutocomplete from './SearchAutocomplete.jsx';
 import MobileBottomNav from './MobileBottomNav.jsx';
 import UpcomingMeetingBanner from './UpcomingMeetingBanner.jsx';
+import ScrollToTopButton from './ScrollToTopButton.jsx';
 
 function NavItem({ to, icon: Icon, label, end }) {
   return (
@@ -287,6 +288,9 @@ export default function Layout({ children }) {
 
       {user && <ChatbotWidget />}
       <MobileBottomNav />
-    </div>
+              
+    <ScrollToTopButton />
+     </div>
+ 
   );
 }
