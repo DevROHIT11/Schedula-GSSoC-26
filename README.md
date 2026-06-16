@@ -179,10 +179,12 @@ npm run db:init            # runs schema.sql + seed.sql
 npm run dev                # http://localhost:4000
 ```
 
+```bash
 If your DB already exists and you just want to apply the latest change (the `avatar_url` column we added):
 
 ```bash
-mysql appointment_app < db/migrations/001_add_avatar_url.sql
+# FIX: Added explicit -u root flag to prevent OS-level user access denied errors
+mysql -u root appointment_app < db/migrations/001_add_avatar_url.sql
 ```
 
 ### 3. Frontend
